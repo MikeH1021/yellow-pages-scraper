@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build/
+
+# Sensitive data
+proxies.txt
+*.env
+.env
+credentials.json
+config_local.py
+
+# Output files
+*.csv
+scrape_results_*
+test_*
+emergency_*
+
+# Logs
+*.log
+web_ui.log
+nohup.out
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Playwright
+.playwright/
+
+# Temporary files
+*.tmp
+temp/
+tmp/
+
+# Backup files
+*.bak
+*.backup

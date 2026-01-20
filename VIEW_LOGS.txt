@@ -1,0 +1,74 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║                    📊 HOW TO VIEW LOGS                            ║
+╔═══════════════════════════════════════════════════════════════════╝
+
+📍 STEP 1: Navigate to Project
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+cd "/Users/jonathangarces/Desktop/yellow page scraper"
+
+
+🔧 STEP 2: Activate Virtual Environment
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+source venv/bin/activate
+
+Your prompt will change to:
+(venv) jonathangarces@Jonathans-MacBook-Pro yellow page scraper %
+  ↑ This means venv is active!
+
+
+🚀 STEP 3: Run Any Script
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+python quick_test.py        # Quick test
+python test_scraper.py      # Interactive test
+python run_scraper.py       # Full scrape
+
+
+📺 LOGS APPEAR AUTOMATICALLY!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+21:59:51 - INFO - Starting browser...
+21:59:51 - INFO - 📄 Scraping page 1/1...
+21:59:58 - INFO - ✓ Found 34 businesses
+22:00:00 - INFO - 💾 Saved to quick_test_results.csv
+22:00:00 - INFO - ✅ Test passed!
+
+
+💾 SAVE LOGS TO FILE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+python run_scraper.py | tee my_logs.log
+
+This will:
+  ✓ Show logs in terminal
+  ✓ Save logs to my_logs.log
+
+
+⚡ EASIEST METHOD: Use Helper Scripts
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+./test.sh              # Auto-activates venv and runs test
+./run.sh               # Auto-activates venv and runs scraper
+./run_with_logs.sh     # Auto-activates venv and saves logs
+
+
+❌ COMMON MISTAKES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DON'T:  python3 test_scraper.py     ❌ No venv activated
+DON'T:  python quick_test.py         ❌ No venv activated
+
+DO:     source venv/bin/activate     ✅ Activate first
+THEN:   python test_scraper.py       ✅ Now it works
+
+OR:     ./test.sh                    ✅ Auto-activates
+
+
+📖 READ SAVED LOGS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+cat demo_scrape.log              # View entire log
+tail -20 demo_scrape.log         # Last 20 lines
+grep "✓ Found" demo_scrape.log   # Search for successes
+tail -f demo_scrape.log          # Watch live (Ctrl+C to stop)
+
+
+📚 MORE INFO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+See HOW_TO_VIEW_LOGS.md for complete guide
+See IMPORTANT_READ_FIRST.md for venv activation help
+

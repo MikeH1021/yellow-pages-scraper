@@ -1,0 +1,55 @@
+# City list for Yellow Pages scraping
+# Tier: top50
+# Total cities: 50
+# Format: City, ST
+
+Jacksonville, FL
+Miami, FL
+Tampa, FL
+Orlando, FL
+St. Petersburg, FL
+Hialeah, FL
+Port St. Lucie, FL
+Cape Coral, FL
+Tallahassee, FL
+Fort Lauderdale, FL
+Pembroke Pines, FL
+Hollywood, FL
+Miramar, FL
+Coral Springs, FL
+Clearwater, FL
+Palm Bay, FL
+Lakeland, FL
+Pompano Beach, FL
+West Palm Beach, FL
+Davie, FL
+New York, NY
+Buffalo, NY
+Rochester, NY
+Yonkers, NY
+Syracuse, NY
+Albany, NY
+New Rochelle, NY
+Mount Vernon, NY
+Schenectady, NY
+Utica, NY
+White Plains, NY
+Hempstead, NY
+Troy, NY
+Niagara Falls, NY
+Binghamton, NY
+Houston, TX
+San Antonio, TX
+Dallas, TX
+Austin, TX
+Fort Worth, TX
+El Paso, TX
+Arlington, TX
+Corpus Christi, TX
+Plano, TX
+Laredo, TX
+Lubbock, TX
+Garland, TX
+Irving, TX
+Amarillo, TX
+Grand Prairie, TX

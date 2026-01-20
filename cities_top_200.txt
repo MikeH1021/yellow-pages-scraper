@@ -1,0 +1,205 @@
+# City list for Yellow Pages scraping
+# Tier: top200
+# Total cities: 200
+# Format: City, ST
+
+Jacksonville, FL
+Miami, FL
+Tampa, FL
+Orlando, FL
+St. Petersburg, FL
+Hialeah, FL
+Port St. Lucie, FL
+Cape Coral, FL
+Tallahassee, FL
+Fort Lauderdale, FL
+Pembroke Pines, FL
+Hollywood, FL
+Miramar, FL
+Coral Springs, FL
+Clearwater, FL
+Palm Bay, FL
+Lakeland, FL
+Pompano Beach, FL
+West Palm Beach, FL
+Davie, FL
+New York, NY
+Buffalo, NY
+Rochester, NY
+Yonkers, NY
+Syracuse, NY
+Albany, NY
+New Rochelle, NY
+Mount Vernon, NY
+Schenectady, NY
+Utica, NY
+White Plains, NY
+Hempstead, NY
+Troy, NY
+Niagara Falls, NY
+Binghamton, NY
+Houston, TX
+San Antonio, TX
+Dallas, TX
+Austin, TX
+Fort Worth, TX
+El Paso, TX
+Arlington, TX
+Corpus Christi, TX
+Plano, TX
+Laredo, TX
+Lubbock, TX
+Garland, TX
+Irving, TX
+Amarillo, TX
+Grand Prairie, TX
+McKinney, TX
+Frisco, TX
+Pasadena, TX
+Killeen, TX
+McAllen, TX
+Philadelphia, PA
+Pittsburgh, PA
+Allentown, PA
+Erie, PA
+Reading, PA
+Scranton, PA
+Bethlehem, PA
+Lancaster, PA
+Harrisburg, PA
+Altoona, PA
+York, PA
+State College, PA
+Wilkes-Barre, PA
+Chicago, IL
+Aurora, IL
+Naperville, IL
+Joliet, IL
+Rockford, IL
+Springfield, IL
+Elgin, IL
+Peoria, IL
+Champaign, IL
+Waukegan, IL
+Cicero, IL
+Bloomington, IL
+Decatur, IL
+Evanston, IL
+Columbus, OH
+Cleveland, OH
+Cincinnati, OH
+Toledo, OH
+Akron, OH
+Dayton, OH
+Parma, OH
+Canton, OH
+Youngstown, OH
+Lorain, OH
+Hamilton, OH
+Springfield, OH
+Kettering, OH
+Elyria, OH
+Atlanta, GA
+Augusta, GA
+Columbus, GA
+Macon, GA
+Savannah, GA
+Athens, GA
+Sandy Springs, GA
+Roswell, GA
+Johns Creek, GA
+Albany, GA
+Warner Robins, GA
+Alpharetta, GA
+Marietta, GA
+Valdosta, GA
+Charlotte, NC
+Raleigh, NC
+Greensboro, NC
+Durham, NC
+Winston-Salem, NC
+Fayetteville, NC
+Cary, NC
+Wilmington, NC
+High Point, NC
+Concord, NC
+Greenville, NC
+Asheville, NC
+Gastonia, NC
+Jacksonville, NC
+Detroit, MI
+Grand Rapids, MI
+Warren, MI
+Sterling Heights, MI
+Ann Arbor, MI
+Lansing, MI
+Flint, MI
+Dearborn, MI
+Livonia, MI
+Troy, MI
+Westland, MI
+Farmington Hills, MI
+Kalamazoo, MI
+Wyoming, MI
+Virginia Beach, VA
+Norfolk, VA
+Chesapeake, VA
+Richmond, VA
+Newport News, VA
+Alexandria, VA
+Hampton, VA
+Roanoke, VA
+Portsmouth, VA
+Suffolk, VA
+Lynchburg, VA
+Harrisonburg, VA
+Charlottesville, VA
+Danville, VA
+Nashville, TN
+Memphis, TN
+Knoxville, TN
+Chattanooga, TN
+Clarksville, TN
+Murfreesboro, TN
+Jackson, TN
+Johnson City, TN
+Franklin, TN
+Bartlett, TN
+Hendersonville, TN
+Kingsport, TN
+Collierville, TN
+Boston, MA
+Worcester, MA
+Springfield, MA
+Cambridge, MA
+Lowell, MA
+Brockton, MA
+Quincy, MA
+Lynn, MA
+New Bedford, MA
+Fall River, MA
+Newton, MA
+Somerville, MA
+Lawrence, MA
+Framingham, MA
+Indianapolis, IN
+Fort Wayne, IN
+Evansville, IN
+South Bend, IN
+Carmel, IN
+Bloomington, IN
+Fishers, IN
+Hammond, IN
+Gary, IN
+Muncie, IN
+Lafayette, IN
+Terre Haute, IN
+Kokomo, IN
+Anderson, IN
+Kansas City, MO
+St. Louis, MO
+Springfield, MO
+Columbia, MO
+Independence, MO
+Lee's Summit, MO
+O'Fallon, MO

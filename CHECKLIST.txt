@@ -1,0 +1,95 @@
+╔════════════════════════════════════════════════════════════════╗
+║         SmartProxy Setup Checklist - Follow These Steps        ║
+╚════════════════════════════════════════════════════════════════╝
+
+□ STEP 1: Complete SmartProxy Purchase
+  └─ Purchase 10GB plan for $9
+  └─ Wait for confirmation email
+
+□ STEP 2: Login to SmartProxy Dashboard
+  └─ Go to: https://dashboard.smartproxy.com/
+  └─ Login with your credentials
+  └─ Click on "Residential Proxies" or "Proxy Setup"
+
+□ STEP 3: Copy Your Credentials
+  You'll see:
+  ┌────────────────────────────────────────────────────┐
+  │ Username: sp12345678-country-us-session-xyz123     │
+  │ Password: abc123def456                             │
+  │ Host: gate.smartproxy.com                          │
+  │ Port: 7000                                         │
+  └────────────────────────────────────────────────────┘
+
+  ✏️  Write these down or copy them!
+
+□ STEP 4: Open Terminal and Navigate to Project
+  cd "/Users/jonathangarces/Desktop/yellow page scraper"
+  source venv/bin/activate
+
+□ STEP 5: Run Setup Script
+  ./setup_smartproxy.sh
+
+  └─ Paste your username when prompted
+  └─ Paste your password when prompted
+  └─ Script will test connection
+
+□ STEP 6: Enable Paid Proxies
+  Open config_top_cities.py and change:
+
+  FROM: USE_PAID_PROXY_SERVICE = False
+  TO:   USE_PAID_PROXY_SERVICE = True
+
+□ STEP 7: Run the Scraper!
+  python run_top_cities.py | tee smartproxy_scrape.log
+
+□ STEP 8: Monitor Progress
+  Watch the logs:
+  ├─ [1/500] building supply in Jacksonville, FL
+  ├─ 🔒 Using proxy: gate.smartproxy.com:7000
+  ├─ 📄 Scraping page 1/10...
+  └─ ✓ Found 34 businesses
+
+□ STEP 9: Wait 2.5-3.5 Hours
+  Go do something else!
+  The scraper will:
+  ├─ Save checkpoints every 25 searches
+  ├─ Log all progress
+  └─ Create CSV files automatically
+
+□ STEP 10: Check Results
+  ls -lh *.csv
+  head -20 top_cities_all_businesses_*.csv
+
+
+═══════════════════════════════════════════════════════════════
+
+🆘 NEED HELP?
+
+Problem: "Authentication failed"
+└─ Check username/password copied correctly
+└─ Username must include "country-us"
+
+Problem: "Connection refused"
+└─ Check internet connection
+└─ Try port 10000 or 10001 instead of 7000
+
+Problem: "Bandwidth exceeded"
+└─ Check SmartProxy dashboard for usage
+└─ Upgrade plan or buy more bandwidth
+
+Problem: Getting blocked
+└─ Shouldn't happen with SmartProxy!
+└─ Check dashboard - proxy might be misconfigured
+
+═══════════════════════════════════════════════════════════════
+
+📚 REFERENCE FILES:
+
+SETUP_SMARTPROXY.md    - Detailed setup guide
+PROXY_BUYING_GUIDE.md  - All about proxies
+WHICH_STRATEGY.md      - Strategy decisions
+VIEW_LOGS.txt          - How to view logs
+
+═══════════════════════════════════════════════════════════════
+
+When you complete the purchase, just follow this checklist! ✅

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yellow Pages Scraper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .panel h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #888;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #e53e3e;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 12px;
+            border: 2px dashed #667eea;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload-label:hover {
+            background: #f7fafc;
+            border-color: #5568d3;
+        }
+
+        .progress-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .progress-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 6px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .logs-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logs {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 4px 0;
+        }
+
+        .log-timestamp {
+            color: #718096;
+            margin-right: 10px;
+        }
+
+        .log-info { color: #63b3ed; }
+        .log-success { color: #68d391; }
+        .log-error { color: #fc8181; }
+
+        .proxy-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .proxy-table th,
+        .proxy-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .proxy-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-healthy {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-warning {
+            background: #feebc8;
+            color: #744210;
+        }
+
+        .status-blocked {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .success-rate {
+            font-weight: 600;
+        }
+
+        .success-rate.high { color: #38a169; }
+        .success-rate.medium { color: #d69e2e; }
+        .success-rate.low { color: #e53e3e; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .running-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #68d391;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .result-file {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f7fafc;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .result-file:hover {
+            background: #edf2f7;
+        }
+
+        .result-info {
+            flex: 1;
+        }
+
+        .result-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .result-meta {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .btn-download {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .btn-download:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Yellow Pages Scraper</h1>
+            <p>Automated lead generation with real-time monitoring</p>
+        </div>
+
+        <div class="main-grid">
+            <!-- Configuration Panel -->
+            <div class="panel">
+                <h2>Configuration</h2>
+
+                <div class="form-group">
+                    <label>Keywords (comma-separated)</label>
+                    <textarea id="keywords" placeholder="building supply, shutters, millwork, lumber, architects"></textarea>
+                    <small>Enter categories or search terms separated by commas</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Locations (comma-separated)</label>
+                    <textarea id="locations" placeholder="Miami FL, Chicago IL, New York NY"></textarea>
+                    <small>Enter cities separated by commas</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Max Pages per Search</label>
+                    <input type="number" id="max_pages" value="10" min="1" max="50">
+                    <small>Each page contains ~30 businesses</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Concurrent Searches</label>
+                    <select id="concurrent">
+                        <option value="1" selected>1 (Sequential - Safest)</option>
+                        <option value="3">3 (Moderate)</option>
+                        <option value="5">5 (Balanced)</option>
+                        <option value="10">10 (Fast)</option>
+                        <option value="20">20 (Very Fast)</option>
+                        <option value="30">30 (Maximum Speed)</option>
+                        <option value="50">50 (Server Only)</option>
+                        <option value="100">100 (Powerful Server)</option>
+                    </select>
+                    <small>Higher = faster but needs more proxies & RAM</small>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="use_proxies" checked> Use Proxies
+                    </label>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="start-btn" onclick="startScrape()">
+                        🚀 Start Scraping
+                    </button>
+                    <button class="btn btn-danger" id="stop-btn" onclick="stopScrape()" disabled>
+                        ⏹ Stop
+                    </button>
+                </div>
+            </div>
+
+            <!-- Proxy Management Panel -->
+            <div class="panel">
+                <h2>Proxy Management</h2>
+
+                <div class="form-group">
+                    <label>Upload Proxy File</label>
+                    <div class="file-upload">
+                        <input type="file" id="proxy-file" accept=".txt" onchange="uploadProxies()">
+                        <label for="proxy-file" class="file-upload-label">
+                            📁 Click to upload proxies.txt
+                        </label>
+                    </div>
+                    <small>Format: host:port:username:password (one per line)</small>
+                </div>
+
+                <div id="proxy-status">
+                    <p style="color: #888;">No proxies loaded</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Panel -->
+        <div class="progress-panel" id="progress-panel" style="display: none;">
+            <h2><span class="running-indicator"></span>Scraping Progress</h2>
+            <div class="progress-bar">
+                <div class="progress-bar-fill" id="progress-bar"></div>
+            </div>
+            <div class="progress-stats">
+                <div class="stat">
+                    <div class="stat-value" id="stat-completed">0</div>
+                    <div class="stat-label">SEARCHES COMPLETED</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">TOTAL SEARCHES</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="stat-businesses">0</div>
+                    <div class="stat-label">BUSINESSES FOUND</div>
+                </div>
+            </div>
+
+            <!-- Download Button -->
+            <div id="download-section" style="display: none; margin-top: 20px; text-align: center;">
+                <button class="btn btn-primary" onclick="downloadResults()" style="font-size: 16px; padding: 15px 30px;">
+                    📥 Download Results CSV
+                </button>
+                <p style="margin-top: 10px; color: #888; font-size: 14px;" id="download-filename"></p>
+            </div>
+        </div>
+
+        <!-- Previous Results Panel -->
+        <div class="panel" id="results-panel" style="display: none; margin-bottom: 20px;">
+            <h2>📁 Previous Results</h2>
+            <div id="results-list">
+                <p style="color: #888;">No previous results found</p>
+            </div>
+        </div>
+
+        <!-- Logs Panel -->
+        <div class="logs-panel">
+            <h2>Live Logs</h2>
+            <div class="logs" id="logs">
+                <div class="log-entry log-info">
+                    <span class="log-timestamp">--:--:--</span> Ready to start scraping...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let eventSource = null;
+
+        // Connect to log stream
+        function connectLogStream() {
+            eventSource = new EventSource('/api/logs');
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+
+                if (data.heartbeat) return;
+
+                const logsDiv = document.getElementById('logs');
+                const entry = document.createElement('div');
+                entry.className = `log-entry log-${data.level}`;
+                entry.innerHTML = `<span class="log-timestamp">${data.timestamp}</span> ${data.message}`;
+
+                logsDiv.appendChild(entry);
+                logsDiv.scrollTop = logsDiv.scrollHeight;
+            };
+        }
+
+        // Upload proxies
+        async function uploadProxies() {
+            const fileInput = document.getElementById('proxy-file');
+            const file = fileInput.files[0];
+
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/upload-proxies', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`✅ ${data.message}`);
+                    loadProxyStatus();
+                } else {
+                    alert(`❌ ${data.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Error uploading proxies: ${error.message}`);
+            }
+        }
+
+        // Load proxy status
+        async function loadProxyStatus() {
+            try {
+                const response = await fetch('/api/proxy-status');
+                const data = await response.json();
+
+                if (data.proxies.length === 0) {
+                    document.getElementById('proxy-status').innerHTML =
+                        '<p style="color: #888;">No proxies loaded</p>';
+                    return;
+                }
+
+                let html = `<table class="proxy-table">
+                    <thead>
+                        <tr>
+                            <th>Proxy</th>
+                            <th>Success Rate</th>
+                            <th>Status</th>
+                            <th>Last Used</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                data.proxies.forEach(proxy => {
+                    const rate = (proxy.success_rate * 100).toFixed(0);
+                    const rateClass = rate >= 70 ? 'high' : rate >= 40 ? 'medium' : 'low';
+                    const status = proxy.is_blocked ? 'blocked' :
+                                  rate >= 70 ? 'healthy' : 'warning';
+
+                    html += `<tr>
+                        <td>${proxy.host}:${proxy.port}</td>
+                        <td><span class="success-rate ${rateClass}">${rate}%</span></td>
+                        <td><span class="status-badge status-${status}">
+                            ${status.toUpperCase()}
+                        </span></td>
+                        <td>${proxy.last_used}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                document.getElementById('proxy-status').innerHTML = html;
+
+            } catch (error) {
+                console.error('Error loading proxy status:', error);
+            }
+        }
+
+        // Start scraping
+        async function startScrape() {
+            const keywords = document.getElementById('keywords').value;
+            const locations = document.getElementById('locations').value;
+            const max_pages = document.getElementById('max_pages').value;
+            const use_proxies = document.getElementById('use_proxies').checked;
+            const concurrent = document.getElementById('concurrent').value;
+
+            if (!keywords || !locations) {
+                alert('Please enter keywords and locations');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/start-scrape', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        keywords,
+                        locations,
+                        max_pages,
+                        use_proxies,
+                        concurrent
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('start-btn').disabled = true;
+                    document.getElementById('stop-btn').disabled = false;
+                    document.getElementById('progress-panel').style.display = 'block';
+                    document.getElementById('stat-total').textContent = data.total_searches;
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Stop scraping
+        async function stopScrape() {
+            try {
+                await fetch('/api/stop-scrape', { method: 'POST' });
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('stop-btn').disabled = true;
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Download results
+        function downloadResults() {
+            window.location.href = '/api/download';
+        }
+
+        // Download specific file
+        function downloadFile(filename) {
+            window.location.href = '/api/download?file=' + encodeURIComponent(filename);
+        }
+
+        // Load previous results
+        async function loadPreviousResults() {
+            try {
+                const response = await fetch('/api/list-results');
+                const data = await response.json();
+
+                if (data.files && data.files.length > 0) {
+                    document.getElementById('results-panel').style.display = 'block';
+
+                    let html = '';
+                    data.files.forEach(file => {
+                        const sizeKB = (file.size / 1024).toFixed(1);
+                        html += `
+                            <div class="result-file">
+                                <div class="result-info">
+                                    <div class="result-name">📄 ${file.filename}</div>
+                                    <div class="result-meta">${file.created} • ${sizeKB} KB</div>
+                                </div>
+                                <button class="btn-download" onclick="downloadFile('${file.filename}')">
+                                    📥 Download
+                                </button>
+                            </div>
+                        `;
+                    });
+
+                    document.getElementById('results-list').innerHTML = html;
+                } else {
+                    document.getElementById('results-panel').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading previous results:', error);
+            }
+        }
+
+        // Update progress
+        async function updateProgress() {
+            try {
+                const response = await fetch('/api/progress');
+                const data = await response.json();
+
+                if (data.progress) {
+                    const percent = (data.progress.completed / data.progress.total_searches * 100) || 0;
+                    document.getElementById('progress-bar').style.width = percent + '%';
+                    document.getElementById('stat-completed').textContent = data.progress.completed;
+                    document.getElementById('stat-businesses').textContent = data.progress.businesses_found;
+                }
+
+                // Show download button if file is available
+                if (data.last_output_file) {
+                    document.getElementById('download-section').style.display = 'block';
+                    document.getElementById('download-filename').textContent =
+                        'File: ' + data.last_output_file;
+                }
+
+                if (!data.running && document.getElementById('stop-btn').disabled === false) {
+                    document.getElementById('start-btn').disabled = false;
+                    document.getElementById('stop-btn').disabled = true;
+                }
+            } catch (error) {
+                console.error('Error updating progress:', error);
+            }
+        }
+
+        // Initialize
+        connectLogStream();
+        loadProxyStatus();
+        loadPreviousResults();
+        setInterval(updateProgress, 1000);
+        setInterval(loadProxyStatus, 5000);
+        setInterval(loadPreviousResults, 10000);  // Refresh every 10 seconds
+    </script>
+</body>
+</html>
