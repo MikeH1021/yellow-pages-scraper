@@ -336,8 +336,15 @@ class WebLogger:
         self._add_log("success", message)
 
 @app.route('/')
+def landing():
+    """Landing page"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return render_template('landing.html')
+
+@app.route('/dashboard')
 @login_required
-def index():
+def dashboard():
     """Main scraper interface"""
     return render_template('scraper.html')
 
@@ -345,7 +352,7 @@ def index():
 def login():
     """Login page"""
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
@@ -355,7 +362,7 @@ def login():
         if user and user.check_password(password):
             login_user(user)
             next_page = request.args.get('next')
-            return redirect(next_page if next_page else url_for('index'))
+            return redirect(next_page if next_page else url_for('dashboard'))
         else:
             flash('Invalid username or password', 'error')
 
@@ -375,7 +382,7 @@ def admin():
     """Admin page for user management"""
     if not current_user.is_admin:
         flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('dashboard'))
 
     conn = get_db()
     cursor = conn.execute('SELECT id, username, is_admin, created_at FROM users ORDER BY created_at')
@@ -452,7 +459,7 @@ def settings():
     """Settings page for API keys and configuration"""
     if not current_user.is_admin:
         flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('dashboard'))
 
     # Get current settings (mask API key for display)
     openai_key = get_setting('openai_api_key', '')
