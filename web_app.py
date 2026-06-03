@@ -455,13 +455,20 @@ def htm_client_data():
     if not name:
         return jsonify({"error": "Client name required"}), 400
 
+    from urllib.parse import quote
+    encoded_name = quote(name, safe='')
+
     # Fetch context (ICP, transcript notes, requirements)
-    ctx_data, ctx_err = _htm_request(f'/api/v1/clients/{name}/context')
-    context = ctx_data.get('context', {}) if ctx_data else {}
+    ctx_data, ctx_err = _htm_request(f'/api/v1/clients/{encoded_name}/context')
+    context = {}
+    if ctx_data and isinstance(ctx_data, dict):
+        context = ctx_data.get('context') or {}
 
     # Fetch documents
-    doc_data, doc_err = _htm_request(f'/api/v1/clients/{name}/documents', {'includeText': 'true'})
-    documents = doc_data.get('documents', []) if doc_data else []
+    doc_data, doc_err = _htm_request(f'/api/v1/clients/{encoded_name}/documents', {'includeText': 'true'})
+    documents = []
+    if doc_data and isinstance(doc_data, dict):
+        documents = doc_data.get('documents') or []
 
     if ctx_err and doc_err:
         return jsonify({"error": ctx_err}), 400
@@ -470,17 +477,17 @@ def htm_client_data():
         "success": True,
         "clientName": name,
         "context": {
-            "icpSummary": context.get('icpSummary', ''),
-            "specialRequirements": context.get('specialRequirements', ''),
-            "transcriptNotes": context.get('transcriptNotes', ''),
+            "icpSummary": context.get('icpSummary') or '',
+            "specialRequirements": context.get('specialRequirements') or '',
+            "transcriptNotes": context.get('transcriptNotes') or '',
         },
         "documents": [
             {
                 "id": d.get('id', ''),
                 "name": d.get('originalName', d.get('name', '')),
-                "text": d.get('extractedText', '')[:5000],  # Cap per doc
+                "text": (d.get('extractedText') or '')[:5000],
             }
-            for d in documents
+            for d in documents if isinstance(d, dict)
         ],
     })
 

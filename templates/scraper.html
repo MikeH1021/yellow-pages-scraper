@@ -3558,49 +3558,56 @@
         });
 
         async function loadClientData() {
-            if (!selectedClient) return;
+            if (!selectedClient) {
+                showNotification('error', 'Please select a client first');
+                return;
+            }
 
             const btn = document.getElementById('load-client-btn');
             btn.disabled = true;
+            btn.textContent = 'Loading...';
             document.getElementById('lists-loading').style.display = 'block';
             document.getElementById('lists-container').style.display = 'none';
 
             try {
                 // Step 1: Fetch client data from HTM Portal
+                showNotification('info', 'Fetching client data from HTM Portal...');
                 const dataResp = await fetch('/api/htm/client-data?name=' + encodeURIComponent(selectedClient));
-                if (!dataResp.ok) {
-                    const err = await dataResp.json().catch(() => ({}));
-                    throw new Error(err.error || 'Failed to load client data');
-                }
                 const clientData = await dataResp.json();
+                if (!clientData.success) {
+                    throw new Error(clientData.error || 'Failed to load client data');
+                }
 
                 // Step 2: Send to Grok for list generation
+                showNotification('info', 'Analyzing with Grok AI — this may take 15-30 seconds...');
                 const listsResp = await fetch('/api/htm/generate-lists', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         clientName: selectedClient,
-                        icpSummary: clientData.context.icpSummary,
-                        transcriptNotes: clientData.context.transcriptNotes,
-                        specialRequirements: clientData.context.specialRequirements,
-                        documentTexts: clientData.documents,
+                        icpSummary: clientData.context.icpSummary || '',
+                        transcriptNotes: clientData.context.transcriptNotes || '',
+                        specialRequirements: clientData.context.specialRequirements || '',
+                        documentTexts: clientData.documents || [],
                     })
                 });
 
-                if (!listsResp.ok) {
-                    const err = await listsResp.json().catch(() => ({}));
-                    throw new Error(err.error || 'Failed to generate lists');
+                const listsData = await listsResp.json();
+                if (!listsData.success) {
+                    throw new Error(listsData.error || 'Failed to generate lists');
                 }
 
-                const listsData = await listsResp.json();
                 suggestedLists = listsData.lists || [];
-
+                showNotification('success', 'Generated ' + suggestedLists.length + ' scrape lists for ' + selectedClient);
                 renderSuggestedLists();
             } catch (e) {
+                console.error('loadClientData error:', e);
                 showNotification('error', e.message || 'Failed to load client data');
+                document.getElementById('lists-loading').style.display = 'none';
             } finally {
                 document.getElementById('lists-loading').style.display = 'none';
                 btn.disabled = false;
+                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg> Generate Lists';
             }
         }
 
