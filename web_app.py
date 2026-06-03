@@ -447,10 +447,40 @@ def htm_clients():
     return jsonify({"success": True, "clients": clients, "total": len(clients)})
 
 
+def _fetch_google_doc(url, max_chars=8000):
+    """Fetch a public Google Doc as plain text via the export endpoint."""
+    import requests as http_requests
+    if not url:
+        return ''
+    # Extract the document ID from various Google Docs URL formats
+    m = re.search(r'/document/d/([a-zA-Z0-9_-]+)', url)
+    if not m:
+        return ''
+    doc_id = m.group(1)
+    try:
+        resp = http_requests.get(
+            f'https://docs.google.com/document/d/{doc_id}/export?format=txt',
+            timeout=20,
+            allow_redirects=True,
+        )
+        if resp.ok and resp.text:
+            # Strip BOM and excessive whitespace
+            text = resp.text.replace('﻿', '').strip()
+            return text[:max_chars]
+    except Exception:
+        log.warning(f"Failed to fetch Google Doc {doc_id}")
+    return ''
+
+
 @app.route('/api/htm/client-data')
 @login_required
 def htm_client_data():
-    """Fetch client context (ICP) and documents from HTM Portal."""
+    """Fetch client targeting data from HTM Portal.
+
+    Targeting data lives in two Google Docs linked from the client's
+    manual-inputs: the intake form and the strategy call transcript.
+    We also check the legacy context/documents endpoints as a fallback.
+    """
     name = request.args.get('name', '').strip()
     if not name:
         return jsonify({"error": "Client name required"}), 400
@@ -458,20 +488,41 @@ def htm_client_data():
     from urllib.parse import quote
     encoded_name = quote(name, safe='')
 
-    # Fetch context (ICP, transcript notes, requirements)
+    documents = []
+
+    # Primary source: intake form + strategy transcript Google Docs from manual-inputs
+    mi_data, mi_err = _htm_request(f'/api/v1/clients/{encoded_name}/manual-inputs')
+    manual_inputs = {}
+    if mi_data and isinstance(mi_data, dict):
+        manual_inputs = mi_data.get('manualInputs') or {}
+
+    intake_url = manual_inputs.get('intakeFormUrl') or ''
+    strategy_url = manual_inputs.get('strategyCallRecording') or ''
+
+    intake_text = _fetch_google_doc(intake_url)
+    strategy_text = _fetch_google_doc(strategy_url)
+
+    if intake_text:
+        documents.append({"id": "intake", "name": "Intake Form", "text": intake_text})
+    if strategy_text:
+        documents.append({"id": "strategy", "name": "Strategy Call Transcript", "text": strategy_text})
+
+    # Fallback: legacy context endpoint (ICP summary, transcript notes)
     ctx_data, ctx_err = _htm_request(f'/api/v1/clients/{encoded_name}/context')
     context = {}
     if ctx_data and isinstance(ctx_data, dict):
         context = ctx_data.get('context') or {}
 
-    # Fetch documents
+    # Fallback: uploaded documents
     doc_data, doc_err = _htm_request(f'/api/v1/clients/{encoded_name}/documents', {'includeText': 'true'})
-    documents = []
     if doc_data and isinstance(doc_data, dict):
-        documents = doc_data.get('documents') or []
-
-    if ctx_err and doc_err:
-        return jsonify({"error": ctx_err}), 400
+        for d in (doc_data.get('documents') or []):
+            if isinstance(d, dict) and (d.get('extractedText') or '').strip():
+                documents.append({
+                    "id": d.get('id', ''),
+                    "name": d.get('originalName', d.get('name', 'Document')),
+                    "text": (d.get('extractedText') or '')[:8000],
+                })
 
     return jsonify({
         "success": True,
@@ -481,14 +532,12 @@ def htm_client_data():
             "specialRequirements": context.get('specialRequirements') or '',
             "transcriptNotes": context.get('transcriptNotes') or '',
         },
-        "documents": [
-            {
-                "id": d.get('id', ''),
-                "name": d.get('originalName', d.get('name', '')),
-                "text": (d.get('extractedText') or '')[:5000],
-            }
-            for d in documents if isinstance(d, dict)
-        ],
+        "documents": documents,
+        "sources": {
+            "intakeForm": bool(intake_text),
+            "strategyTranscript": bool(strategy_text),
+            "uploadedDocs": len(documents) - (1 if intake_text else 0) - (1 if strategy_text else 0),
+        },
     })
 
 
