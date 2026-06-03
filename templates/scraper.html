@@ -2008,58 +2008,219 @@
             </div>
         </div>
 
-        <!-- Client Selector Panel -->
-        <div class="panel" id="client-panel" style="margin-bottom: 20px; border: 1px solid var(--glass-border-light); background: linear-gradient(135deg, rgba(139,92,246,0.05), rgba(34,211,238,0.03));">
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-                <div style="display: flex; align-items: center; gap: 14px;">
-                    <div style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, var(--primary), var(--accent));flex-shrink:0;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    </div>
-                    <div>
-                        <div style="font-weight: 700; font-size: 15px; color: var(--white);">Client Targeting</div>
-                        <div style="font-size: 12px; color: var(--gray-500);">Load ICP & strategy from HTM Portal</div>
-                    </div>
+        <!-- Target Acquisition Console -->
+        <div class="acq-console" id="client-panel">
+            <span class="acq-reticle tl"></span><span class="acq-reticle tr"></span>
+            <span class="acq-reticle bl"></span><span class="acq-reticle br"></span>
+
+            <div class="acq-head">
+                <div class="acq-head-left">
+                    <div class="acq-eyebrow"><span class="acq-dot"></span>// TARGET ACQUISITION</div>
+                    <h2 class="acq-title">Client Intelligence</h2>
+                    <p class="acq-sub">Pull a client's ICP &amp; strategy from the HTM Portal, then let Grok plot scrape vectors.</p>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <div style="position: relative;">
-                        <input type="text" id="client-search" placeholder="Search clients..." autocomplete="off"
-                            style="width: 240px; padding: 10px 14px; background: var(--dark-elevated); border: 2px solid var(--glass-border); border-radius: 10px; color: var(--white); font-size: 13px; font-family: inherit;"
+                <div class="acq-head-right">
+                    <div class="acq-search">
+                        <span class="acq-prompt">&gt;</span>
+                        <input type="text" id="client-search" placeholder="search client&hellip;" autocomplete="off"
                             oninput="searchClients(this.value)" onfocus="searchClients(this.value)">
-                        <div id="client-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; margin-top:4px; background:var(--dark-card); border:1px solid var(--glass-border-light); border-radius:12px; max-height:250px; overflow-y:auto; z-index:100; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
-                        </div>
+                        <span class="acq-search-scan"></span>
+                        <div id="client-dropdown" class="acq-dropdown"></div>
                     </div>
-                    <button id="load-client-btn" onclick="loadClientData()" disabled
-                        style="padding: 10px 18px; background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; border: none; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; opacity: 0.5; transition: all 0.3s; font-family: inherit;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
-                        Generate Lists
+                    <button id="load-client-btn" class="acq-generate" onclick="loadClientData()" disabled>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="1" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="23"></line><line x1="1" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="23" y2="12"></line></svg>
+                        <span>Plot Vectors</span>
                     </button>
                 </div>
             </div>
-            <div id="client-selected" style="display:none; margin-top: 14px; padding: 10px 14px; background: rgba(34,211,238,0.08); border: 1px solid rgba(34,211,238,0.2); border-radius: 10px; font-size: 13px; color: var(--accent);">
+
+            <div id="client-selected" class="acq-locked"></div>
+            <div id="client-error" class="acq-error"></div>
+
+            <div id="lists-loading" class="acq-loading">
+                <div class="acq-radar"><span class="acq-radar-sweep"></span><span class="acq-radar-ring"></span><span class="acq-radar-ring r2"></span><span class="acq-radar-blip b1"></span><span class="acq-radar-blip b2"></span><span class="acq-radar-blip b3"></span></div>
+                <div class="acq-loading-text" id="lists-loading-text">Scanning strategy intel&hellip;</div>
+                <div class="acq-loading-sub">Grok is plotting five distinct scrape vectors</div>
             </div>
-            <div id="client-error" style="display:none; margin-top: 14px; padding: 14px 18px; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 10px; font-size: 13px; color: #fca5a5;"></div>
-            <div id="lists-loading" style="display:none; margin-top: 16px; text-align: center; padding: 30px; color: var(--gray-400);">
-                <div style="display:inline-block; width:20px; height:20px; border:2px solid var(--primary); border-top-color:transparent; border-radius:50%; animation: spin 0.8s linear infinite; margin-bottom:10px;"></div>
-                <div id="lists-loading-text">Analyzing strategy data with Grok...</div>
-                <div style="font-size:11px; color:var(--gray-500); margin-top:4px;">Generating 5 targeted scrape lists</div>
-            </div>
-            <div id="lists-container" style="display:none; margin-top: 16px;"></div>
+
+            <div id="lists-container" class="acq-vectors"></div>
         </div>
         <style>
-            @keyframes spin { to { transform: rotate(360deg); } }
-            .list-card { background: var(--dark-elevated); border: 2px solid var(--glass-border); border-radius: 14px; padding: 18px; margin-bottom: 10px; transition: all 0.3s; cursor: pointer; }
-            .list-card:hover { border-color: var(--primary); }
-            .list-card.selected { border-color: var(--success); background: rgba(52,211,153,0.05); }
-            .list-card .list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-            .list-card .list-name { font-weight: 700; font-size: 14px; color: var(--white); }
-            .list-card .list-desc { font-size: 12px; color: var(--gray-400); line-height: 1.6; margin-bottom: 10px; }
-            .list-card .list-meta { display: flex; gap: 12px; font-size: 11px; color: var(--gray-500); }
-            .list-card .list-meta span { background: var(--dark-card); padding: 3px 8px; border-radius: 6px; }
-            .list-card .list-check { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--gray-600); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
-            .list-card.selected .list-check { background: var(--success); border-color: var(--success); }
-            .list-card.selected .list-check::after { content: '✓'; color: white; font-size: 14px; font-weight: 700; }
-            .load-selected-btn { margin-top: 12px; padding: 12px 24px; background: linear-gradient(135deg, var(--success), #059669); color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.3s; font-family: inherit; display: none; }
-            .load-selected-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(52,211,153,0.4); }
+            /* ===== TARGET ACQUISITION CONSOLE ===== */
+            .acq-console {
+                position: relative;
+                margin-bottom: 22px;
+                padding: 26px 28px;
+                border-radius: 4px;
+                background:
+                    linear-gradient(135deg, rgba(34,211,238,0.04), rgba(139,92,246,0.03) 60%, transparent),
+                    repeating-linear-gradient(115deg, rgba(255,255,255,0.012) 0 2px, transparent 2px 7px),
+                    var(--dark-card);
+                border: 1px solid rgba(34,211,238,0.16);
+                box-shadow: 0 0 0 1px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03), 0 24px 60px -30px rgba(34,211,238,0.25);
+            }
+            /* targeting reticle corner brackets */
+            .acq-reticle { position: absolute; width: 16px; height: 16px; pointer-events: none; opacity: 0.8; }
+            .acq-reticle.tl { top: -1px; left: -1px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); }
+            .acq-reticle.tr { top: -1px; right: -1px; border-top: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+            .acq-reticle.bl { bottom: -1px; left: -1px; border-bottom: 2px solid var(--accent); border-left: 2px solid var(--accent); }
+            .acq-reticle.br { bottom: -1px; right: -1px; border-bottom: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+            .acq-console:hover .acq-reticle { opacity: 1; box-shadow: 0 0 8px rgba(34,211,238,0.4); }
+
+            .acq-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+            .acq-head-left { min-width: 240px; }
+            .acq-eyebrow {
+                display: inline-flex; align-items: center; gap: 7px;
+                font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500;
+                letter-spacing: 0.18em; color: var(--accent); margin-bottom: 10px;
+            }
+            .acq-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: acqPulse 1.8s ease-in-out infinite; }
+            @keyframes acqPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+            .acq-title { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: var(--white); line-height: 1.1; }
+            .acq-sub { font-size: 13px; color: var(--gray-500); margin-top: 6px; max-width: 360px; line-height: 1.55; }
+
+            .acq-head-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+            .acq-search { position: relative; display: flex; align-items: center; }
+            .acq-prompt {
+                position: absolute; left: 14px; font-family: 'JetBrains Mono', monospace;
+                font-size: 14px; color: var(--accent); pointer-events: none; opacity: 0.7;
+            }
+            .acq-search input {
+                width: 250px; padding: 12px 14px 12px 30px;
+                background: rgba(0,0,0,0.35);
+                border: 1px solid var(--glass-border); border-radius: 3px;
+                color: var(--white); font-family: 'JetBrains Mono', monospace; font-size: 13px;
+                letter-spacing: 0.02em; transition: all 0.25s; outline: none;
+            }
+            .acq-search input::placeholder { color: var(--gray-600); }
+            .acq-search input:focus { border-color: var(--accent); background: rgba(0,0,0,0.5); box-shadow: 0 0 0 3px rgba(34,211,238,0.12); }
+            .acq-search-scan {
+                position: absolute; left: 30px; right: 14px; bottom: 9px; height: 1px;
+                background: linear-gradient(90deg, transparent, var(--accent), transparent);
+                opacity: 0; transition: opacity 0.3s;
+            }
+            .acq-search input:focus ~ .acq-search-scan { opacity: 0.6; animation: acqScan 2s ease-in-out infinite; }
+            @keyframes acqScan { 0%,100% { transform: scaleX(0.3); opacity: 0.2; } 50% { transform: scaleX(1); opacity: 0.7; } }
+
+            .acq-dropdown {
+                display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+                background: rgba(10,10,15,0.96); backdrop-filter: blur(12px);
+                border: 1px solid rgba(34,211,238,0.2); border-radius: 3px;
+                max-height: 280px; overflow-y: auto; z-index: 200;
+                box-shadow: 0 20px 50px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(0,0,0,0.5);
+            }
+            .acq-opt { padding: 11px 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.15s; display: flex; align-items: center; gap: 10px; }
+            .acq-opt:last-child { border-bottom: none; }
+            .acq-opt:hover { background: rgba(34,211,238,0.08); }
+            .acq-opt-crosshair { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.5; }
+            .acq-opt:hover .acq-opt-crosshair { opacity: 1; }
+            .acq-opt-name { font-weight: 600; font-size: 13px; color: var(--white); }
+            .acq-opt-meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--gray-600); margin-top: 1px; letter-spacing: 0.04em; }
+            .acq-empty { padding: 14px; color: var(--gray-600); font-family: 'JetBrains Mono', monospace; font-size: 12px; text-align: center; }
+
+            .acq-generate {
+                display: inline-flex; align-items: center; gap: 8px;
+                padding: 12px 20px; border: 1px solid rgba(34,211,238,0.4); border-radius: 3px;
+                background: linear-gradient(135deg, rgba(34,211,238,0.16), rgba(34,211,238,0.06));
+                color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 12px;
+                font-weight: 600; letter-spacing: 0.04em; cursor: pointer; transition: all 0.25s;
+                text-transform: uppercase;
+            }
+            .acq-generate svg { transition: transform 0.5s ease; }
+            .acq-generate:not(:disabled):hover { background: linear-gradient(135deg, rgba(34,211,238,0.28), rgba(34,211,238,0.12)); box-shadow: 0 0 24px -4px rgba(34,211,238,0.5); color: #fff; }
+            .acq-generate:not(:disabled):hover svg { transform: rotate(90deg); }
+            .acq-generate:disabled { opacity: 0.35; cursor: not-allowed; filter: grayscale(0.6); }
+
+            .acq-locked {
+                display: none; align-items: center; gap: 10px; margin-top: 16px; padding: 11px 16px;
+                background: rgba(34,211,238,0.06); border: 1px solid rgba(34,211,238,0.18); border-radius: 3px;
+                font-size: 13px; color: var(--gray-300);
+            }
+            .acq-locked::before {
+                content: 'LOCK'; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700;
+                letter-spacing: 0.1em; color: var(--dark); background: var(--accent); padding: 3px 6px; border-radius: 2px;
+            }
+            .acq-locked strong { color: var(--white); font-weight: 700; }
+
+            .acq-error {
+                display: none; margin-top: 16px; padding: 14px 18px;
+                background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.28);
+                border-left: 3px solid var(--danger); border-radius: 3px;
+                font-size: 13px; color: #fca5a5; line-height: 1.55;
+            }
+
+            /* radar loader */
+            .acq-loading { display: none; flex-direction: column; align-items: center; padding: 38px 20px 32px; }
+            .acq-radar { position: relative; width: 90px; height: 90px; border-radius: 50%; background: radial-gradient(circle, rgba(34,211,238,0.06), transparent 70%); border: 1px solid rgba(34,211,238,0.2); overflow: hidden; }
+            .acq-radar-ring { position: absolute; inset: 22px; border: 1px solid rgba(34,211,238,0.15); border-radius: 50%; }
+            .acq-radar-ring.r2 { inset: 38px; }
+            .acq-radar-sweep { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, rgba(34,211,238,0.55), transparent 60deg); animation: acqSweep 1.6s linear infinite; }
+            @keyframes acqSweep { to { transform: rotate(360deg); } }
+            .acq-radar-blip { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); opacity: 0; }
+            .acq-radar-blip.b1 { top: 28%; left: 62%; animation: acqBlip 1.6s linear infinite; }
+            .acq-radar-blip.b2 { top: 60%; left: 35%; animation: acqBlip 1.6s linear infinite 0.5s; }
+            .acq-radar-blip.b3 { top: 45%; left: 70%; animation: acqBlip 1.6s linear infinite 1s; }
+            @keyframes acqBlip { 0%,70% { opacity: 0; } 75% { opacity: 1; } 100% { opacity: 0; } }
+            .acq-loading-text { margin-top: 18px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent); letter-spacing: 0.05em; }
+            .acq-loading-sub { margin-top: 5px; font-size: 12px; color: var(--gray-600); }
+
+            /* vector dossier cards */
+            .acq-vectors { display: none; margin-top: 22px; }
+            .acq-vectors-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: var(--gray-500); margin-bottom: 14px; text-transform: uppercase; }
+            .acq-vectors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+
+            .vector-card {
+                position: relative; padding: 18px 18px 16px; cursor: pointer;
+                background: linear-gradient(160deg, rgba(255,255,255,0.025), transparent);
+                border: 1px solid var(--glass-border); border-radius: 3px;
+                transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+                overflow: hidden;
+                opacity: 0; transform: translateY(14px);
+                animation: vecReveal 0.5s cubic-bezier(0.22,1,0.36,1) forwards;
+            }
+            @keyframes vecReveal { to { opacity: 1; transform: translateY(0); } }
+            .vector-card::before {
+                content: ''; position: absolute; top: 0; left: 0; width: 2px; height: 100%;
+                background: var(--gray-700); transition: background 0.25s, box-shadow 0.25s;
+            }
+            .vector-card:hover { transform: translateY(-3px); border-color: rgba(34,211,238,0.4); box-shadow: 0 14px 30px -16px rgba(34,211,238,0.4); }
+            .vector-card:hover::before { background: var(--accent); }
+            .vector-card.selected { border-color: rgba(52,211,153,0.5); background: linear-gradient(160deg, rgba(52,211,153,0.07), transparent); }
+            .vector-card.selected::before { background: var(--success); box-shadow: 0 0 14px var(--success-glow); }
+
+            .vector-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
+            .vector-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--gray-600); letter-spacing: 0.08em; }
+            .vector-card.selected .vector-id { color: var(--success); }
+            .vector-name { font-size: 15px; font-weight: 700; color: var(--white); line-height: 1.25; margin-top: 3px; }
+            .vector-lock {
+                width: 24px; height: 24px; flex-shrink: 0; position: relative;
+                border: 1.5px solid var(--gray-600); border-radius: 2px; transition: all 0.2s;
+            }
+            .vector-card:hover .vector-lock { border-color: var(--accent); }
+            .vector-card.selected .vector-lock { border-color: var(--success); background: var(--success); }
+            .vector-card.selected .vector-lock::after { content: ''; position: absolute; left: 7px; top: 3px; width: 6px; height: 11px; border: solid var(--dark); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+            .vector-desc { font-size: 12.5px; color: var(--gray-400); line-height: 1.6; margin-bottom: 14px; }
+            .vector-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+            .vector-stat { display: inline-flex; align-items: baseline; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gray-500); background: rgba(0,0,0,0.3); padding: 4px 9px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.04); }
+            .vector-stat b { color: var(--accent); font-weight: 600; }
+            .vector-stat.est b { color: var(--success); }
+
+            .acq-deploy-bar { display: none; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--glass-border); flex-wrap: wrap; }
+            .acq-deploy-count { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--gray-400); }
+            .acq-deploy-count b { color: var(--success); }
+            .acq-deploy-btn {
+                display: inline-flex; align-items: center; gap: 9px; padding: 13px 26px;
+                background: linear-gradient(135deg, var(--success), #059669); color: #04140d;
+                border: none; border-radius: 3px; font-size: 13px; font-weight: 800;
+                letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; transition: all 0.25s;
+            }
+            .acq-deploy-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -8px var(--success-glow); }
+
+            @media (max-width: 720px) {
+                .acq-head-right { width: 100%; }
+                .acq-search, .acq-search input { width: 100%; }
+                .acq-generate { width: 100%; justify-content: center; }
+            }
         </style>
 
         <!-- Main Grid -->
@@ -3520,19 +3681,22 @@
                     if (!resp.ok) { dropdown.style.display = 'none'; return; }
                     const data = await resp.json();
                     if (!data.success || !data.clients.length) {
-                        dropdown.innerHTML = '<div style="padding:12px;color:var(--gray-500);font-size:13px;">No clients found</div>';
+                        dropdown.innerHTML = '<div class="acq-empty">// no targets matched</div>';
                         dropdown.style.display = 'block';
                         return;
                     }
 
-                    dropdown.innerHTML = data.clients.map(c => `
-                        <div onclick="selectClient('${c.name.replace(/'/g, "\\'")}')"
-                            style="padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--glass-border); transition:background 0.2s; font-size:13px;"
-                            onmouseover="this.style.background='rgba(139,92,246,0.1)'" onmouseout="this.style.background='transparent'">
-                            <div style="font-weight:600; color:var(--white);">${c.name}</div>
-                            <div style="font-size:11px; color:var(--gray-500); margin-top:2px;">${c.strategist || ''} ${c.stage ? '· ' + c.stage : ''}</div>
-                        </div>
-                    `).join('');
+                    const crosshair = '<svg class="acq-opt-crosshair" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2"><circle cx="12" cy="12" r="7"></circle><line x1="12" y1="1" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="23"></line><line x1="1" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="23" y2="12"></line></svg>';
+                    dropdown.innerHTML = data.clients.map(c => {
+                        const meta = [c.strategist, c.stage].filter(Boolean).join(' · ').toUpperCase();
+                        return `<div class="acq-opt" onclick="selectClient('${c.name.replace(/'/g, "\\'")}')">
+                            ${crosshair}
+                            <div>
+                                <div class="acq-opt-name">${c.name}</div>
+                                ${meta ? `<div class="acq-opt-meta">${meta}</div>` : ''}
+                            </div>
+                        </div>`;
+                    }).join('');
                     dropdown.style.display = 'block';
                 } catch (e) {
                     dropdown.style.display = 'none';
@@ -3544,11 +3708,11 @@
             selectedClient = name;
             document.getElementById('client-search').value = name;
             document.getElementById('client-dropdown').style.display = 'none';
-            document.getElementById('client-selected').style.display = 'block';
-            document.getElementById('client-selected').innerHTML = 'Selected: <strong>' + name + '</strong>';
+            const locked = document.getElementById('client-selected');
+            locked.style.display = 'flex';
+            locked.innerHTML = 'Target acquired — <strong>' + name + '</strong>';
             const btn = document.getElementById('load-client-btn');
             btn.disabled = false;
-            btn.style.opacity = '1';
         }
 
         // Close dropdown when clicking outside
@@ -3570,10 +3734,10 @@
             const loadingText = document.getElementById('lists-loading-text');
 
             btn.disabled = true;
-            btn.textContent = 'Loading...';
+            btn.querySelector('span').textContent = 'Scanning';
             errorDiv.style.display = 'none';
-            loadingDiv.style.display = 'block';
-            loadingText.textContent = 'Fetching client data from HTM Portal...';
+            loadingDiv.style.display = 'flex';
+            loadingText.innerHTML = 'Pulling intel from HTM Portal&hellip;';
             document.getElementById('lists-container').style.display = 'none';
 
             try {
@@ -3595,7 +3759,7 @@
                 }
 
                 // Step 2: Send to Grok for list generation
-                loadingText.textContent = 'Analyzing with Grok AI — this takes 15-30 seconds...';
+                loadingText.innerHTML = 'Grok is plotting scrape vectors&hellip;';
                 const listsResp = await fetch('/api/htm/generate-lists', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -3623,7 +3787,7 @@
             } finally {
                 loadingDiv.style.display = 'none';
                 btn.disabled = false;
-                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg> Generate Lists';
+                btn.querySelector('span').textContent = 'Plot Vectors';
             }
         }
 
@@ -3633,37 +3797,51 @@
             errorDiv.style.display = 'block';
         }
 
+        function esc(s) {
+            return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
         function renderSuggestedLists() {
             const container = document.getElementById('lists-container');
             if (!suggestedLists.length) {
-                container.innerHTML = '<div style="color:var(--gray-500);font-size:13px;padding:16px;">No lists generated. Try a different client.</div>';
+                container.innerHTML = '<div class="acq-empty" style="padding:24px;">// no vectors plotted — try a different client</div>';
                 container.style.display = 'block';
                 return;
             }
 
-            let html = '<div style="font-size:13px;color:var(--gray-400);margin-bottom:10px;">Select lists to load into the scraper:</div>';
-
+            let cards = '';
             suggestedLists.forEach((list, i) => {
                 const kwCount = (list.keywords || []).length;
                 const locCount = (list.locations || []).length;
-                html += `
-                    <div class="list-card" id="list-card-${i}" onclick="toggleList(${i})">
-                        <div class="list-header">
-                            <div class="list-name">${list.name || 'List ' + (i+1)}</div>
-                            <div class="list-check"></div>
+                const id = String(i + 1).padStart(2, '0');
+                cards += `
+                    <div class="vector-card" id="list-card-${i}" onclick="toggleList(${i})" style="animation-delay:${i * 70}ms">
+                        <div class="vector-top">
+                            <div>
+                                <div class="vector-id">VECTOR ${id}</div>
+                                <div class="vector-name">${esc(list.name) || 'Vector ' + (i+1)}</div>
+                            </div>
+                            <div class="vector-lock"></div>
                         </div>
-                        <div class="list-desc">${list.description || ''}</div>
-                        <div class="list-meta">
-                            <span>${kwCount} keywords</span>
-                            <span>${locCount} locations</span>
-                            <span>${list.estimated_results || '?'} est. results</span>
+                        <div class="vector-desc">${esc(list.description)}</div>
+                        <div class="vector-meta">
+                            <span class="vector-stat"><b>${kwCount}</b> keywords</span>
+                            <span class="vector-stat"><b>${locCount}</b> locations</span>
+                            <span class="vector-stat est"><b>${esc(list.estimated_results) || '?'}</b> est.</span>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
 
-            html += '<button class="load-selected-btn" id="apply-lists-btn" onclick="applySelectedLists()">Load Selected Lists into Scraper</button>';
-            container.innerHTML = html;
+            container.innerHTML = `
+                <div class="acq-vectors-label">// ${suggestedLists.length} scrape vectors plotted — select to deploy</div>
+                <div class="acq-vectors-grid">${cards}</div>
+                <div class="acq-deploy-bar" id="acq-deploy-bar">
+                    <div class="acq-deploy-count" id="acq-deploy-count"></div>
+                    <button class="acq-deploy-btn" onclick="applySelectedLists()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Load into Scraper
+                    </button>
+                </div>`;
             container.style.display = 'block';
         }
 
@@ -3671,13 +3849,19 @@
             const card = document.getElementById('list-card-' + index);
             card.classList.toggle('selected');
 
-            const anySelected = document.querySelectorAll('.list-card.selected').length > 0;
-            const applyBtn = document.getElementById('apply-lists-btn');
-            applyBtn.style.display = anySelected ? 'inline-block' : 'none';
+            const selected = document.querySelectorAll('.vector-card.selected');
+            const bar = document.getElementById('acq-deploy-bar');
+            const count = document.getElementById('acq-deploy-count');
+            if (selected.length > 0) {
+                bar.style.display = 'flex';
+                count.innerHTML = '<b>' + selected.length + '</b> of ' + suggestedLists.length + ' vectors armed';
+            } else {
+                bar.style.display = 'none';
+            }
         }
 
         function applySelectedLists() {
-            const selectedCards = document.querySelectorAll('.list-card.selected');
+            const selectedCards = document.querySelectorAll('.vector-card.selected');
             if (!selectedCards.length) return;
 
             let allKeywords = new Set();
@@ -3690,24 +3874,22 @@
                 (list.locations || []).forEach(l => allLocations.add(l));
             });
 
-            // Populate the form
             document.getElementById('keywords').value = Array.from(allKeywords).join(', ');
             document.getElementById('locations').value = Array.from(allLocations).join(', ');
 
-            // Auto-enable proxies and set reasonable concurrency
             document.getElementById('use_proxies').checked = true;
             const concurrent = document.getElementById('concurrent');
             if (parseInt(concurrent.value) < 50) {
                 concurrent.value = '100';
             }
 
-            // Close the lists view
             document.getElementById('lists-container').style.display = 'none';
-            document.getElementById('client-selected').innerHTML = 'Selected: <strong>' + selectedClient + '</strong> — ' + selectedCards.length + ' list(s) loaded (' + allKeywords.size + ' keywords, ' + allLocations.size + ' locations)';
+            const locked = document.getElementById('client-selected');
+            locked.style.display = 'flex';
+            locked.innerHTML = '<strong>' + selectedClient + '</strong> — ' + selectedCards.length + ' vector(s) loaded · ' + allKeywords.size + ' keywords · ' + allLocations.size + ' locations';
 
-            showNotification('success', `Loaded ${allKeywords.size} keywords and ${allLocations.size} locations from ${selectedCards.length} list(s)`);
+            showNotification('success', `Loaded ${allKeywords.size} keywords and ${allLocations.size} locations from ${selectedCards.length} vector(s)`);
 
-            // Scroll to the form
             document.getElementById('keywords').scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
