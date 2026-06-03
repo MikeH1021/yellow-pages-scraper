@@ -376,10 +376,73 @@ MIT License - see LICENSE file for details.
 
 ---
 
-**Ready to generate hundreds of thousands of B2B leads? Let's go!** 🚀
+---
+
+## 🤖 CLI & AI Agent Integration
+
+The CLI lets you run scrapes from the terminal or from AI coding agents like Claude Code.
+
+### Install the CLI
 
 ```bash
-python web_app.py
-# Open http://localhost:5001
-# Start scraping!
+pip install requests
+curl -O https://raw.githubusercontent.com/MikeH1021/yellow-pages-scraper/main/yp-cli.py
+chmod +x yp-cli.py
+```
+
+### Usage
+
+```bash
+# Login (one-time, session is saved)
+python3 yp-cli.py login --user YOUR_USERNAME --password YOUR_PASSWORD
+
+# Run a scrape and download results
+python3 yp-cli.py scrape \
+  --keywords "plumbers,electricians" \
+  --locations "Miami FL,Houston TX" \
+  --pages 2 --concurrent 100 --proxies \
+  --wait --output leads.csv
+
+# Get AI-powered suggestions for your target market
+python3 yp-cli.py suggest --icp "roofing companies in the southeast US"
+
+# Check status, list results, download files
+python3 yp-cli.py status
+python3 yp-cli.py results
+python3 yp-cli.py download --output my_leads.csv
+```
+
+### Install as a Claude Code Skill
+
+Paste this into Claude Code to teach it how to use the scraper:
+
+```
+/read https://raw.githubusercontent.com/MikeH1021/yellow-pages-scraper/main/SKILL.md
+
+Download the CLI and save the skill:
+
+curl -o ~/.local/bin/yp-cli.py https://raw.githubusercontent.com/MikeH1021/yellow-pages-scraper/main/yp-cli.py
+chmod +x ~/.local/bin/yp-cli.py
+pip install requests
+
+Then login:
+python3 ~/.local/bin/yp-cli.py login --user YOUR_USERNAME --password YOUR_PASSWORD
+```
+
+Once installed, Claude Code can run scrapes on your behalf:
+
+> "Scrape all plumbers and electricians in Miami, Houston, and Chicago. Use proxies and save to leads.csv"
+
+The `SKILL.md` file teaches the agent every available command, flag, and workflow pattern.
+
+---
+
+**Ready to generate hundreds of thousands of B2B leads? Let's go!** 🚀
+
+**Web UI:** https://scrape-yp.mikehernandez.co
+
+```bash
+# Or use the CLI:
+python3 yp-cli.py login --user mike --password changeme123
+python3 yp-cli.py scrape --keywords "your industry" --locations "your city" --proxies --wait -o leads.csv
 ```
