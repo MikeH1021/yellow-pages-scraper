@@ -2037,9 +2037,10 @@
             </div>
             <div id="client-selected" style="display:none; margin-top: 14px; padding: 10px 14px; background: rgba(34,211,238,0.08); border: 1px solid rgba(34,211,238,0.2); border-radius: 10px; font-size: 13px; color: var(--accent);">
             </div>
+            <div id="client-error" style="display:none; margin-top: 14px; padding: 14px 18px; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 10px; font-size: 13px; color: #fca5a5;"></div>
             <div id="lists-loading" style="display:none; margin-top: 16px; text-align: center; padding: 30px; color: var(--gray-400);">
                 <div style="display:inline-block; width:20px; height:20px; border:2px solid var(--primary); border-top-color:transparent; border-radius:50%; animation: spin 0.8s linear infinite; margin-bottom:10px;"></div>
-                <div>Analyzing strategy data with Grok...</div>
+                <div id="lists-loading-text">Analyzing strategy data with Grok...</div>
                 <div style="font-size:11px; color:var(--gray-500); margin-top:4px;">Generating 5 targeted scrape lists</div>
             </div>
             <div id="lists-container" style="display:none; margin-top: 16px;"></div>
@@ -3559,27 +3560,42 @@
 
         async function loadClientData() {
             if (!selectedClient) {
-                showNotification('error', 'Please select a client first');
+                showClientError('Please select a client first');
                 return;
             }
 
             const btn = document.getElementById('load-client-btn');
+            const errorDiv = document.getElementById('client-error');
+            const loadingDiv = document.getElementById('lists-loading');
+            const loadingText = document.getElementById('lists-loading-text');
+
             btn.disabled = true;
             btn.textContent = 'Loading...';
-            document.getElementById('lists-loading').style.display = 'block';
+            errorDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            loadingText.textContent = 'Fetching client data from HTM Portal...';
             document.getElementById('lists-container').style.display = 'none';
 
             try {
                 // Step 1: Fetch client data from HTM Portal
-                showNotification('info', 'Fetching client data from HTM Portal...');
                 const dataResp = await fetch('/api/htm/client-data?name=' + encodeURIComponent(selectedClient));
                 const clientData = await dataResp.json();
                 if (!clientData.success) {
                     throw new Error(clientData.error || 'Failed to load client data');
                 }
 
+                // Check if there's any data to work with
+                const hasIcp = clientData.context && clientData.context.icpSummary;
+                const hasTranscript = clientData.context && clientData.context.transcriptNotes;
+                const hasDocs = clientData.documents && clientData.documents.length > 0;
+                const hasDocText = hasDocs && clientData.documents.some(d => d.text && d.text.length > 50);
+
+                if (!hasIcp && !hasTranscript && !hasDocText) {
+                    throw new Error('No targeting data found for ' + selectedClient + '. Make sure the client has an ICP, strategy call transcript, or documents uploaded in the HTM Portal.');
+                }
+
                 // Step 2: Send to Grok for list generation
-                showNotification('info', 'Analyzing with Grok AI — this may take 15-30 seconds...');
+                loadingText.textContent = 'Analyzing with Grok AI — this takes 15-30 seconds...';
                 const listsResp = await fetch('/api/htm/generate-lists', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -3598,17 +3614,23 @@
                 }
 
                 suggestedLists = listsData.lists || [];
+                errorDiv.style.display = 'none';
                 showNotification('success', 'Generated ' + suggestedLists.length + ' scrape lists for ' + selectedClient);
                 renderSuggestedLists();
             } catch (e) {
                 console.error('loadClientData error:', e);
-                showNotification('error', e.message || 'Failed to load client data');
-                document.getElementById('lists-loading').style.display = 'none';
+                showClientError(e.message || 'Failed to load client data');
             } finally {
-                document.getElementById('lists-loading').style.display = 'none';
+                loadingDiv.style.display = 'none';
                 btn.disabled = false;
                 btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg> Generate Lists';
             }
+        }
+
+        function showClientError(msg) {
+            const errorDiv = document.getElementById('client-error');
+            errorDiv.textContent = msg;
+            errorDiv.style.display = 'block';
         }
 
         function renderSuggestedLists() {
