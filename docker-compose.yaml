@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "5001:5001"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      RESULTS_DIR: /data/results
+      PROXY_FILE: /data/proxies/proxies.txt
+      SECRET_KEY: ${SECRET_KEY:-REDACTED_ROTATED_SECRET}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-mike}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme123}
+      XAI_API_KEY: ${XAI_API_KEY:-}
+      XAI_MODEL: ${XAI_MODEL:-grok-4.3}
+    volumes:
+      - results:/data/results
+      - proxies:/data/proxies
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      RESULTS_DIR: /data/results
+      PROXY_FILE: /data/proxies/proxies.txt
+      MAX_CONCURRENT: "150"
+      POLL_INTERVAL: "2"
+    volumes:
+      - results:/data/results
+      - proxies:/data/proxies
+    depends_on:
+      - redis
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+  results:
+  proxies:

@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: yp-scraper
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: yp-scraper-web:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5001
+          envFrom:
+            - configMapRef:
+                name: yp-scraper-config
+            - secretRef:
+                name: yp-scraper-secret
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: results
+              mountPath: /data/results
+            - name: proxies
+              mountPath: /data/proxies
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5001
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 5001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: results
+          persistentVolumeClaim:
+            claimName: yp-results
+        - name: proxies
+          persistentVolumeClaim:
+            claimName: yp-proxies
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: yp-scraper
+spec:
+  selector:
+    app: web
+  ports:
+    - port: 5001
+      targetPort: 5001

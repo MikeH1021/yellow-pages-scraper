@@ -1,0 +1,26 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install only web dependencies (no Playwright/Chromium)
+COPY requirements-web.txt .
+RUN pip install --no-cache-dir -r requirements-web.txt
+
+# Copy application code
+COPY web_app.py job_store.py ./
+COPY templates/ templates/
+COPY static/ static/
+
+# Create results directory
+RUN mkdir -p /data/results /data/proxies
+
+EXPOSE 5001
+
+CMD ["gunicorn", \
+     "--worker-class", "gevent", \
+     "--workers", "2", \
+     "--bind", "0.0.0.0:5001", \
+     "--timeout", "300", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "web_app:app"]

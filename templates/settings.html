@@ -375,16 +375,16 @@
                         <path d="M2 12l10 5 10-5"></path>
                     </svg>
                 </div>
-                <h2>OpenAI Integration<small>Configure ChatGPT for AI-powered suggestions</small></h2>
+                <h2>Grok (xAI) Integration<small>AI-powered suggestions using {{ model_name }}</small></h2>
             </div>
 
-            {% if has_openai_key %}
+            {% if has_api_key %}
                 <div class="current-key">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                         <polyline points="22 4 12 14.01 9 11.01"></polyline>
                     </svg>
-                    API key configured: <code>{{ openai_key_masked }}</code>
+                    API key configured ({{ key_source }}): <code>{{ api_key_masked }}</code>
                 </div>
             {% else %}
                 <div class="no-key">
@@ -404,12 +404,15 @@
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                         </svg>
-                        OpenAI API Key
+                        xAI API Key
                     </label>
-                    <input type="password" name="openai_api_key" placeholder="sk-..." autocomplete="off">
+                    <input type="password" name="xai_api_key" placeholder="xai-..." autocomplete="off">
                     <small>
-                        Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a>.
+                        Get your API key from <a href="https://console.x.ai/" target="_blank">xAI Console</a>.
                         Your key is stored securely and only used for AI suggestions.
+                        {% if key_source == 'environment variable' %}
+                        <br>A global key is already set via environment variable. Setting one here will not override it.
+                        {% endif %}
                     </small>
                 </div>
 

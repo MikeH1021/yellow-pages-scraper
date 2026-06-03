@@ -112,7 +112,7 @@ class ParallelScraper:
         retry_delay: float = 5.0,
         stagger_delay: float = 0.5,
         jitter: float = 0.5,
-        max_concurrent_requests: int = 20
+        max_concurrent_requests: int = 249
     ):
         self.workers = workers
         self.headless = headless
@@ -440,7 +440,7 @@ async def run_parallel_scrape(
     retry_delay: float = 5.0,
     stagger_delay: float = 0.5,
     jitter: float = 0.5,
-    max_concurrent_requests: int = 20
+    max_concurrent_requests: int = 249
 ) -> Tuple[List[Dict], Dict]:
     """
     Convenience function to run parallel scraping

@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: yp-scraper
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      terminationGracePeriodSeconds: 120
+      containers:
+        - name: worker
+          image: yp-scraper-worker:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: yp-scraper-config
+            - secretRef:
+                name: yp-scraper-secret
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          volumeMounts:
+            - name: results
+              mountPath: /data/results
+            - name: proxies
+              mountPath: /data/proxies
+          livenessProbe:
+            exec:
+              command: ["python", "-c", "import redis; r = redis.Redis.from_url('redis://redis:6379/0'); r.ping()"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+            timeoutSeconds: 10
+      volumes:
+        - name: results
+          persistentVolumeClaim:
+            claimName: yp-results
+        - name: proxies
+          persistentVolumeClaim:
+            claimName: yp-proxies

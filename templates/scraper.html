@@ -1970,6 +1970,15 @@
                     </svg>
                     {{ current_user.username }}
                 </div>
+                <a href="{{ url_for('docs') }}" class="header-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    Docs
+                </a>
                 {% if current_user.is_admin %}
                 <a href="{{ url_for('admin') }}" class="header-btn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2082,11 +2091,13 @@
                     <select id="concurrent">
                         <option value="10">10 Workers</option>
                         <option value="25">25 Workers</option>
-                        <option value="50" selected>50 Workers (Recommended)</option>
+                        <option value="50">50 Workers</option>
                         <option value="75">75 Workers</option>
                         <option value="100">100 Workers</option>
                         <option value="125">125 Workers</option>
-                        <option value="150">150 Workers (Maximum)</option>
+                        <option value="150">150 Workers</option>
+                        <option value="200">200 Workers</option>
+                        <option value="249" selected>249 Workers (Maximum)</option>
                     </select>
                     <small>More workers = faster scraping (requires proxies)</small>
                 </div>
@@ -2893,30 +2904,56 @@
 
         let eventSource = null;
         let startTime = null;
-        let scrapeStartedAt = null;  // Track when scrape started to prevent false completion detection
-        const SCRAPE_GRACE_PERIOD = 10000;  // 10 seconds grace period before checking running status
+        let scrapeStartedAt = null;
+        let currentJobId = localStorage.getItem('yp_current_job') || null;
+        let progressInterval = null;
+        const SCRAPE_GRACE_PERIOD = 10000;
 
-        // Connect to log stream
+        // Connect to log stream with auto-reconnect
         function connectLogStream() {
-            eventSource = new EventSource('/api/logs');
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            const logUrl = currentJobId ? '/api/logs?job_id=' + currentJobId : '/api/logs';
+            eventSource = new EventSource(logUrl);
 
             eventSource.onmessage = function(event) {
-                const data = JSON.parse(event.data);
+                try {
+                    const data = JSON.parse(event.data);
 
-                if (data.heartbeat) return;
+                    if (data.heartbeat) return;
 
-                const logsDiv = document.getElementById('logs');
-                const entry = document.createElement('div');
-                entry.className = `log-entry log-${data.level}`;
-                entry.innerHTML = `<span class="log-timestamp">${data.timestamp}</span> ${data.message}`;
+                    // Job complete signal from server
+                    if (data.job_complete) {
+                        onJobComplete();
+                        return;
+                    }
 
-                logsDiv.appendChild(entry);
-                logsDiv.scrollTop = logsDiv.scrollHeight;
+                    const logsDiv = document.getElementById('logs');
+                    const entry = document.createElement('div');
+                    entry.className = `log-entry log-${data.level || 'info'}`;
+                    const ts = data.timestamp || new Date().toLocaleTimeString();
+                    const msg = data.message || '';
+                    // Escape HTML to prevent injection
+                    const safeMsg = msg.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    entry.innerHTML = `<span class="log-timestamp">${ts}</span> ${safeMsg}`;
 
-                // Keep only last 500 entries
-                while (logsDiv.children.length > 500) {
-                    logsDiv.removeChild(logsDiv.firstChild);
+                    logsDiv.appendChild(entry);
+                    logsDiv.scrollTop = logsDiv.scrollHeight;
+
+                    while (logsDiv.children.length > 500) {
+                        logsDiv.removeChild(logsDiv.firstChild);
+                    }
+                } catch (e) {
+                    console.error('Error parsing log:', e);
                 }
+            };
+
+            eventSource.onerror = function() {
+                // Auto-reconnect after 3 seconds
+                eventSource.close();
+                setTimeout(connectLogStream, 3000);
             };
         }
 
@@ -3022,6 +3059,7 @@
             }
 
             const startBtn = document.getElementById('start-btn');
+            startBtn.disabled = true;
             startBtn.classList.add('btn-loading');
 
             try {
@@ -3039,31 +3077,43 @@
                     })
                 });
 
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || `Server error (${response.status})`);
+                }
+
                 const data = await response.json();
 
                 if (data.success) {
-                    startBtn.disabled = true;
+                    currentJobId = data.job_id;
+                    localStorage.setItem('yp_current_job', currentJobId);
                     document.getElementById('stop-btn').disabled = false;
                     document.getElementById('progress-panel').style.display = 'block';
                     document.getElementById('stat-total').textContent = data.total_searches;
                     document.getElementById('download-section').style.display = 'none';
                     document.getElementById('workers-header').textContent = concurrent;
-                    startTime = Date.now();
-                    scrapeStartedAt = Date.now();  // Track scrape start for grace period
 
-                    // 🚀 ENGAGE HYPERSPACE!
+                    // Show pending state
+                    document.querySelector('.progress-header h2').textContent = 'Waiting for worker...';
+
+                    startTime = Date.now();
+                    scrapeStartedAt = Date.now();
+
+                    connectLogStream();
+
                     Starfield.jumpToHyperspace();
 
-                    // Scroll to progress panel
                     document.getElementById('progress-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
 
                     const limitMsg = max_businesses > 0 ? ` (limit: ${formatNumber(max_businesses)} businesses)` : '';
-                    showNotification('success', `Started scraping ${data.total_searches} searches with ${concurrent} workers${limitMsg}`);
+                    showNotification('success', `Job ${data.job_id} queued: ${data.total_searches} searches with ${concurrent} workers${limitMsg}`);
                 } else {
-                    showNotification('error', data.error);
+                    startBtn.disabled = false;
+                    showNotification('error', data.error || 'Failed to start scrape');
                 }
             } catch (error) {
-                showNotification('error', error.message);
+                startBtn.disabled = false;
+                showNotification('error', error.message || 'Network error - please check your connection');
             } finally {
                 startBtn.classList.remove('btn-loading');
             }
@@ -3072,7 +3122,11 @@
         // Stop scraping
         async function stopScrape() {
             try {
-                await fetch('/api/stop-scrape', { method: 'POST' });
+                await fetch('/api/stop-scrape', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ job_id: currentJobId })
+                });
                 document.getElementById('start-btn').disabled = false;
                 document.getElementById('stop-btn').disabled = true;
                 scrapeStartedAt = null;  // Reset grace period tracking
@@ -3086,14 +3140,10 @@
             }
         }
 
-        // Download results
-        function downloadResults() {
-            window.location.href = '/api/download';
-        }
-
         // Download all results as zip
         function downloadAllResults() {
-            window.location.href = '/api/download-all';
+            const jobParam = currentJobId ? '?job_id=' + currentJobId : '';
+            window.location.href = '/api/download-all' + jobParam;
         }
 
         // Download specific file
@@ -3175,21 +3225,57 @@
             }
         }
 
+        // Job completion handler
+        function onJobComplete() {
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('stop-btn').disabled = true;
+            localStorage.removeItem('yp_current_job');
+            scrapeStartedAt = null;
+
+            Starfield.dropFromHyperspace();
+
+            document.querySelector('.progress-header h2').textContent = 'Scraping Complete';
+            const indicator = document.querySelector('.running-indicator');
+            if (indicator) {
+                indicator.style.background = 'var(--success)';
+                indicator.style.animation = 'none';
+            }
+
+            setTimeout(() => {
+                document.getElementById('progress-panel').style.display = 'none';
+                document.querySelector('.progress-header h2').textContent = 'Scraping in Progress';
+                if (indicator) indicator.style.animation = 'pulseIndicator 1.5s ease-in-out infinite';
+            }, 5000);
+
+            loadPreviousResults();
+        }
+
         // Update progress
         async function updateProgress() {
             try {
-                const response = await fetch('/api/progress');
+                const progressUrl = currentJobId ? '/api/progress?job_id=' + currentJobId : '/api/progress';
+                const response = await fetch(progressUrl);
+                if (!response.ok) return;
                 const data = await response.json();
+
+                // Update status text
+                if (data.status === 'pending') {
+                    document.querySelector('.progress-header h2').textContent = 'Waiting for worker...';
+                } else if (data.status === 'running') {
+                    document.querySelector('.progress-header h2').textContent = 'Scraping in Progress';
+                } else if (data.status === 'error') {
+                    document.querySelector('.progress-header h2').textContent = 'Job Failed';
+                    onJobComplete();
+                    return;
+                }
 
                 if (data.progress) {
                     const completed = data.progress.completed || 0;
                     const total = data.progress.total_searches || 0;
                     const businesses = data.progress.businesses_found || 0;
                     const maxBusinesses = data.progress.max_businesses || 0;
+                    const errors = data.progress.errors || 0;
 
-                    // Calculate progress percentage:
-                    // If max_businesses limit is set, use businesses found vs limit
-                    // Otherwise, use searches completed vs total searches
                     let percent;
                     if (maxBusinesses > 0) {
                         percent = Math.min(100, (businesses / maxBusinesses) * 100);
@@ -3201,9 +3287,8 @@
                     document.getElementById('stat-completed').textContent = formatNumber(completed);
                     document.getElementById('stat-businesses').textContent = formatNumber(businesses);
 
-                    // Calculate rate (businesses per minute if limit set, otherwise searches per minute)
                     if (startTime && completed > 0) {
-                        const elapsed = (Date.now() - startTime) / 1000 / 60; // minutes
+                        const elapsed = (Date.now() - startTime) / 1000 / 60;
                         if (maxBusinesses > 0 && businesses > 0) {
                             const bizRate = Math.round(businesses / elapsed);
                             document.getElementById('stat-rate').textContent = formatNumber(bizRate) + ' biz';
@@ -3223,36 +3308,10 @@
                 }
 
                 // Check if scraping has finished
-                // Use grace period to prevent false completion detection due to file read race conditions
-                const stopBtn = document.getElementById('stop-btn');
                 const isWithinGracePeriod = scrapeStartedAt && (Date.now() - scrapeStartedAt < SCRAPE_GRACE_PERIOD);
-                const hasActuallyCompleted = !data.running && stopBtn.disabled === false && !isWithinGracePeriod;
 
-                // Also check if we have progress data indicating work was done (additional safety)
-                const hasProgress = data.progress && (data.progress.completed > 0 || data.progress.businesses_found > 0);
-
-                if (hasActuallyCompleted && (hasProgress || !isWithinGracePeriod)) {
-                    document.getElementById('start-btn').disabled = false;
-                    stopBtn.disabled = true;
-                    scrapeStartedAt = null;  // Reset for next scrape
-
-                    // 🛑 DROP FROM HYPERSPACE - We've arrived!
-                    Starfield.dropFromHyperspace();
-
-                    // Update progress panel to show completion
-                    document.querySelector('.progress-header h2').textContent = 'Scraping Complete';
-                    document.querySelector('.running-indicator').style.background = 'var(--success)';
-                    document.querySelector('.running-indicator').style.animation = 'none';
-
-                    // Hide progress panel after 5 seconds
-                    setTimeout(() => {
-                        document.getElementById('progress-panel').style.display = 'none';
-                        // Reset for next scrape
-                        document.querySelector('.progress-header h2').textContent = 'Scraping in Progress';
-                        document.querySelector('.running-indicator').style.animation = 'pulseIndicator 1.5s ease-in-out infinite';
-                    }, 5000);
-
-                    loadPreviousResults();
+                if (!data.running && !isWithinGracePeriod && data.status && data.status !== 'pending') {
+                    onJobComplete();
                 }
             } catch (error) {
                 console.error('Error updating progress:', error);
@@ -3323,12 +3382,41 @@
             requestAnimationFrame(update);
         }
 
+        // Recover running job on page load
+        async function recoverRunningJob() {
+            try {
+                const progressUrl = currentJobId ? '/api/progress?job_id=' + currentJobId : '/api/progress';
+                const response = await fetch(progressUrl);
+                if (!response.ok) return;
+                const data = await response.json();
+
+                if (data.running && data.job_id) {
+                    currentJobId = data.job_id;
+                    localStorage.setItem('yp_current_job', currentJobId);
+                    document.getElementById('start-btn').disabled = true;
+                    document.getElementById('stop-btn').disabled = false;
+                    document.getElementById('progress-panel').style.display = 'block';
+                    document.getElementById('stat-total').textContent = data.progress.total_searches || 0;
+                    startTime = Date.now();
+                    scrapeStartedAt = Date.now();
+                    Starfield.jumpToHyperspace();
+                    showNotification('info', `Reconnected to running job ${data.job_id}`);
+                } else {
+                    localStorage.removeItem('yp_current_job');
+                    currentJobId = null;
+                }
+            } catch (e) {
+                console.error('Recovery check failed:', e);
+            }
+        }
+
         // Initialize
+        recoverRunningJob();
         connectLogStream();
         loadProxyStatus();
         loadPreviousResults();
-        setInterval(updateProgress, 1000);
-        setInterval(loadProxyStatus, 10000);
+        progressInterval = setInterval(updateProgress, 1500);
+        setInterval(loadProxyStatus, 30000);
         setInterval(loadPreviousResults, 30000);
 
         // Add smooth reveal animation on scroll

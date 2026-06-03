@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog - YP Scraper Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8b5cf6; --primary-dark: #7c3aed; --primary-light: #a78bfa;
+            --accent: #22d3ee; --success: #34d399; --warning: #fbbf24; --danger: #f87171;
+            --dark: #0a0a0f; --dark-card: #12121a; --dark-elevated: #1a1a25;
+            --gray-500: #71717a; --gray-400: #a1a1aa; --gray-300: #d4d4d8;
+            --light: #fafafa; --white: #ffffff;
+            --glass: rgba(255, 255, 255, 0.03); --glass-border: rgba(255, 255, 255, 0.08);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--dark); min-height: 100vh; color: var(--light); }
+        .bg-mesh {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: radial-gradient(ellipse 80% 50% at 20% -20%, rgba(139, 92, 246, 0.15), transparent),
+                        radial-gradient(ellipse 60% 40% at 80% 0%, rgba(34, 211, 238, 0.1), transparent), var(--dark);
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 24px; }
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 24px 32px; background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 24px; margin-bottom: 28px;
+        }
+        .header h1 {
+            font-size: 24px; font-weight: 700;
+            background: linear-gradient(135deg, var(--white) 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .header p { color: var(--gray-400); font-size: 14px; margin-top: 4px; }
+        .btn {
+            display: flex; align-items: center; gap: 8px; padding: 12px 20px; border: none;
+            border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s ease; text-decoration: none;
+        }
+        .btn-secondary {
+            background: var(--dark-elevated); color: var(--gray-300); border: 1px solid var(--glass-border);
+        }
+        .btn-secondary:hover { border-color: var(--primary); }
+
+        .version-entry {
+            position: relative; padding: 0 0 40px 40px;
+            border-left: 2px solid var(--glass-border);
+            margin-left: 20px;
+        }
+        .version-entry:last-child { border-left-color: transparent; padding-bottom: 0; }
+        .version-dot {
+            position: absolute; left: -9px; top: 0;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: var(--primary); border: 3px solid var(--dark);
+        }
+        .version-entry.latest .version-dot {
+            background: var(--success); box-shadow: 0 0 12px rgba(52, 211, 153, 0.5);
+        }
+        .version-header {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
+        }
+        .version-tag {
+            font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--white);
+        }
+        .version-date { font-size: 13px; color: var(--gray-500); }
+        .version-badge {
+            padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+        }
+        .badge-latest { background: rgba(52, 211, 153, 0.2); color: var(--success); }
+        .badge-major { background: rgba(139, 92, 246, 0.2); color: var(--primary-light); }
+
+        .version-body {
+            background: var(--dark-card); border: 1px solid var(--glass-border);
+            border-radius: 16px; padding: 24px;
+        }
+        .version-body h3 {
+            font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+            margin: 16px 0 8px; display: flex; align-items: center; gap: 8px;
+        }
+        .version-body h3:first-child { margin-top: 0; }
+        .tag-added { color: var(--success); }
+        .tag-changed { color: var(--warning); }
+        .tag-fixed { color: var(--danger); }
+        .tag-perf { color: var(--accent); }
+        .version-body ul { padding-left: 18px; margin-bottom: 4px; }
+        .version-body li { color: var(--gray-300); font-size: 14px; line-height: 1.8; }
+        .version-body code {
+            background: var(--dark-elevated); padding: 1px 6px; border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Changelog</h1>
+                <p>Version history and release notes</p>
+            </div>
+            <div style="display:flex;gap:12px">
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Dashboard</a>
+                {% else %}
+                <a href="{{ url_for('landing') }}" class="btn btn-secondary">Home</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="version-entry latest">
+            <div class="version-dot"></div>
+            <div class="version-header">
+                <span class="version-tag">v3.0.0</span>
+                <span class="version-date">June 3, 2026</span>
+                <span class="version-badge badge-latest">Latest</span>
+                <span class="version-badge badge-major">Major</span>
+            </div>
+            <div class="version-body">
+                <h3 class="tag-added">Added</h3>
+                <ul>
+                    <li>Kubernetes-ready containerized architecture (Docker + k3s)</li>
+                    <li>Shared-browser engine: 1 Chromium + N contexts (25x less RAM)</li>
+                    <li>Redis-backed job queue, state, auth, and log streaming</li>
+                    <li>Worker pod with automatic crash recovery</li>
+                    <li>CLI tool (<code>yp-cli.py</code>) for terminal and AI agent usage</li>
+                    <li>Grok (xAI) integration replacing OpenAI for AI suggestions</li>
+                    <li>Error count tracking with live display during scrapes</li>
+                    <li>Job persistence across page reloads (localStorage)</li>
+                    <li>Documentation page and changelog</li>
+                    <li>Health check endpoint (<code>/healthz</code>)</li>
+                    <li><code>SKILL.md</code> for Claude Code AI agent integration</li>
+                </ul>
+                <h3 class="tag-perf">Performance</h3>
+                <ul>
+                    <li>249 concurrent scrapes in 3GB RAM (was 45GB with old architecture)</li>
+                    <li>3,100+ businesses/min with proxy rotation</li>
+                    <li>Web container: 83MB idle, Worker: 120MB idle</li>
+                    <li>250 searches complete in ~30-45 seconds</li>
+                </ul>
+                <h3 class="tag-fixed">Fixed</h3>
+                <ul>
+                    <li>Open redirect vulnerability on login</li>
+                    <li>Path traversal in file downloads</li>
+                    <li>SSE log stream infinite loop with no timeout</li>
+                    <li>Jobs stuck in "running" after worker crash</li>
+                    <li>Browser context memory leaks on exceptions</li>
+                    <li>Redis connection loss causing permanent worker death</li>
+                    <li>Double-click race condition on Start button</li>
+                    <li>Page reload losing track of running job</li>
+                </ul>
+                <h3 class="tag-changed">Changed</h3>
+                <ul>
+                    <li>Replaced SQLite with Redis for user/settings storage</li>
+                    <li>Replaced file-based state with Redis pub/sub</li>
+                    <li>Admin password moved from hardcoded to environment variable</li>
+                    <li>Input validation: max 200 keywords/locations, bounded numerics</li>
+                    <li>File upload limited to 10MB</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="version-entry">
+            <div class="version-dot"></div>
+            <div class="version-header">
+                <span class="version-tag">v2.0.0</span>
+                <span class="version-date">March 12, 2026</span>
+            </div>
+            <div class="version-body">
+                <h3 class="tag-added">Added</h3>
+                <ul>
+                    <li>Public landing page with feature overview</li>
+                    <li>Hyperspace starfield animation during scrapes</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="version-entry">
+            <div class="version-dot"></div>
+            <div class="version-header">
+                <span class="version-tag">v1.1.0</span>
+                <span class="version-date">January 29, 2026</span>
+            </div>
+            <div class="version-body">
+                <h3 class="tag-added">Added</h3>
+                <ul>
+                    <li>Parallel scraping with configurable worker count</li>
+                    <li>Admin panel for user management</li>
+                    <li>User authentication with Flask-Login</li>
+                    <li>Settings page for API key configuration</li>
+                    <li>AI-powered keyword/location suggestions (OpenAI)</li>
+                    <li>Proxy rotation with health tracking</li>
+                    <li>Chunked CSV output for large result sets</li>
+                    <li>Business limit to cap results</li>
+                    <li>Auto-cleanup of old result files</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="version-entry">
+            <div class="version-dot"></div>
+            <div class="version-header">
+                <span class="version-tag">v1.0.0</span>
+                <span class="version-date">January 20, 2026</span>
+            </div>
+            <div class="version-body">
+                <h3 class="tag-added">Added</h3>
+                <ul>
+                    <li>Initial release</li>
+                    <li>Web UI for configuring and running scrapes</li>
+                    <li>Playwright-based scraping engine</li>
+                    <li>Real-time log monitoring via SSE</li>
+                    <li>CSV export with download</li>
+                    <li>Proxy file support</li>
+                    <li>Gunicorn production server with systemd service</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
