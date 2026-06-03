@@ -24,6 +24,8 @@ RESULTS_DIR = os.environ.get('RESULTS_DIR', '/data/results')
 PROXY_FILE = os.environ.get('PROXY_FILE', '/data/proxies/proxies.txt')
 XAI_API_KEY = os.environ.get('XAI_API_KEY', '')
 XAI_MODEL = os.environ.get('XAI_MODEL', 'grok-4.3')
+HTM_API_KEY = os.environ.get('HTM_API_KEY', '')
+HTM_BASE_URL = os.environ.get('HTM_BASE_URL', 'https://high-ticket-portal-production.up.railway.app')
 MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
 
 app = Flask(__name__, static_folder='static')
@@ -375,6 +377,209 @@ Rules:
     except Exception as e:
         log.exception("AI suggestions error")
         return jsonify({"error": "Failed to get suggestions. Please try again."}), 500
+
+
+# --- HTM Portal Integration ---
+
+def _htm_request(path, params=None):
+    """Make an authenticated request to the HTM Portal API."""
+    import requests as http_requests
+    if not HTM_API_KEY:
+        return None, "HTM Portal API key not configured. Set HTM_API_KEY env var."
+    try:
+        resp = http_requests.get(
+            f"{HTM_BASE_URL}{path}",
+            headers={'Authorization': f'Bearer {HTM_API_KEY}'},
+            params=params,
+            timeout=30,
+        )
+        if resp.status_code == 401:
+            return None, "HTM Portal API key is invalid"
+        if not resp.ok:
+            return None, f"HTM Portal error: HTTP {resp.status_code}"
+        return resp.json(), None
+    except Exception as e:
+        log.exception("HTM Portal request failed")
+        return None, f"Failed to connect to HTM Portal"
+
+
+@app.route('/api/htm/clients')
+@login_required
+def htm_clients():
+    """Search clients from HTM Portal."""
+    q = request.args.get('q', '').strip()
+    params = {'fields': 'name,strategist,csm,stage'}
+    if q and len(q) >= 2:
+        params['q'] = q
+    data, err = _htm_request('/api/v1/clients', params)
+    if err:
+        return jsonify({"error": err}), 400
+    clients = [{'name': c.get('name', ''), 'strategist': c.get('strategist', ''), 'csm': c.get('csm', ''), 'stage': c.get('stage', '')} for c in data.get('clients', [])]
+    return jsonify({"success": True, "clients": clients, "total": len(clients)})
+
+
+@app.route('/api/htm/client-data')
+@login_required
+def htm_client_data():
+    """Fetch client context (ICP) and documents from HTM Portal."""
+    name = request.args.get('name', '').strip()
+    if not name:
+        return jsonify({"error": "Client name required"}), 400
+
+    # Fetch context (ICP, transcript notes, requirements)
+    ctx_data, ctx_err = _htm_request(f'/api/v1/clients/{name}/context')
+    context = ctx_data.get('context', {}) if ctx_data else {}
+
+    # Fetch documents
+    doc_data, doc_err = _htm_request(f'/api/v1/clients/{name}/documents', {'includeText': 'true'})
+    documents = doc_data.get('documents', []) if doc_data else []
+
+    if ctx_err and doc_err:
+        return jsonify({"error": ctx_err}), 400
+
+    return jsonify({
+        "success": True,
+        "clientName": name,
+        "context": {
+            "icpSummary": context.get('icpSummary', ''),
+            "specialRequirements": context.get('specialRequirements', ''),
+            "transcriptNotes": context.get('transcriptNotes', ''),
+        },
+        "documents": [
+            {
+                "id": d.get('id', ''),
+                "name": d.get('originalName', d.get('name', '')),
+                "text": d.get('extractedText', '')[:5000],  # Cap per doc
+            }
+            for d in documents
+        ],
+    })
+
+
+@app.route('/api/htm/generate-lists', methods=['POST'])
+@login_required
+def htm_generate_lists():
+    """Use Grok to analyze client data and suggest 5 scrape lists."""
+    try:
+        import requests as http_requests
+
+        data = request.json
+        if not data:
+            return jsonify({"error": "Invalid request"}), 400
+
+        client_name = data.get('clientName', '')
+        icp_summary = data.get('icpSummary', '')
+        transcript_notes = data.get('transcriptNotes', '')
+        special_requirements = data.get('specialRequirements', '')
+        document_texts = data.get('documentTexts', [])
+
+        # Build context block
+        context_parts = []
+        if icp_summary:
+            context_parts.append(f"ICP SUMMARY:\n{icp_summary}")
+        if transcript_notes:
+            context_parts.append(f"STRATEGY CALL NOTES:\n{transcript_notes}")
+        if special_requirements:
+            context_parts.append(f"SPECIAL REQUIREMENTS:\n{special_requirements}")
+        for i, doc in enumerate(document_texts[:3]):
+            if doc.get('text'):
+                doc_name = doc.get('name', f'Doc {i+1}')
+                context_parts.append(f"DOCUMENT '{doc_name}':\n{doc['text'][:3000]}")
+
+        if not context_parts:
+            return jsonify({"error": "No client data available. Upload documents or set ICP in the portal first."}), 400
+
+        full_context = "\n\n---\n\n".join(context_parts)
+
+        api_key = XAI_API_KEY or job_store.get_setting('xai_api_key')
+        if not api_key:
+            return jsonify({"error": "Grok API key not configured"}), 400
+
+        prompt = f"""You are a B2B lead generation expert. Analyze the following client strategy data and propose exactly 5 distinct Yellow Pages scrape lists.
+
+CLIENT: {client_name}
+
+{full_context}
+
+---
+
+Based on this information, create 5 DIFFERENT scrape lists that each target a distinct segment of the client's ideal customer profile. Each list should approach the ICP from a different angle — different industries, different roles, different geographic focuses, or different service categories.
+
+Respond in this exact JSON format:
+{{
+  "lists": [
+    {{
+      "name": "Short descriptive name for this list",
+      "description": "1-2 sentence explanation of what this list targets and why",
+      "keywords": ["keyword1", "keyword2", "keyword3", ...],
+      "locations": ["City ST", "City ST", ...],
+      "estimated_results": "rough estimate like '5,000-10,000'"
+    }},
+    ...
+  ]
+}}
+
+Rules:
+- Each list MUST have a unique targeting angle (don't just repeat the same keywords with different cities)
+- Keywords should be Yellow Pages business categories (e.g., "plumbers", "roofing contractors")
+- Locations in "City ST" format (e.g., "Miami FL", "Chicago IL")
+- Include 5-20 keywords per list
+- Include 5-30 locations per list
+- Consider the client's geographic preferences from the strategy data
+- Think about adjacent industries and related service providers
+- Only return valid JSON, no other text"""
+
+        response = http_requests.post(
+            'https://api.x.ai/v1/chat/completions',
+            headers={
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json'
+            },
+            json={
+                'model': XAI_MODEL,
+                'messages': [
+                    {'role': 'system', 'content': 'You are a B2B lead generation strategist. Always respond with valid JSON only.'},
+                    {'role': 'user', 'content': prompt}
+                ],
+                'temperature': 0.8,
+                'max_tokens': 4000
+            },
+            timeout=120
+        )
+
+        if response.status_code != 200:
+            try:
+                error_msg = response.json().get('error', {}).get('message', 'Unknown error')
+            except Exception:
+                error_msg = f"HTTP {response.status_code}"
+            return jsonify({"error": f"Grok API error: {error_msg}"}), 500
+
+        result = response.json()
+        try:
+            content = result['choices'][0]['message']['content'].strip()
+        except (KeyError, IndexError, TypeError):
+            return jsonify({"error": "Unexpected response from Grok"}), 500
+
+        if content.startswith('```'):
+            parts = content.split('```')
+            content = parts[1] if len(parts) > 1 else content
+            if content.startswith('json'):
+                content = content[4:]
+        content = content.strip()
+
+        suggestions = json.loads(content)
+        lists = suggestions.get('lists', [])
+
+        if not isinstance(lists, list) or len(lists) == 0:
+            return jsonify({"error": "Grok did not return valid list suggestions"}), 500
+
+        return jsonify({"success": True, "lists": lists[:5], "clientName": client_name})
+
+    except json.JSONDecodeError:
+        return jsonify({"error": "Failed to parse AI response. Please try again."}), 500
+    except Exception as e:
+        log.exception("HTM generate lists error")
+        return jsonify({"error": "Failed to generate lists. Please try again."}), 500
 
 
 @app.route('/api/upload-proxies', methods=['POST'])

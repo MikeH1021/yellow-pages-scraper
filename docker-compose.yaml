@@ -22,9 +22,11 @@ services:
       PROXY_FILE: /data/proxies/proxies.txt
       SECRET_KEY: ${SECRET_KEY:-REDACTED_ROTATED_SECRET}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-mike}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme123}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-REDACTED_ROTATED_SECRET}
       XAI_API_KEY: ${XAI_API_KEY:-}
       XAI_MODEL: ${XAI_MODEL:-grok-4.3}
+      HTM_API_KEY: ${HTM_API_KEY:-}
+      HTM_BASE_URL: ${HTM_BASE_URL:-https://high-ticket-portal-production.up.railway.app}
     volumes:
       - results:/data/results
       - proxies:/data/proxies
