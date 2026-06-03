@@ -26,10 +26,13 @@ spec:
           resources:
             requests:
               memory: "512Mi"
-              cpu: "200m"
+              cpu: "500m"
             limits:
-              memory: "2Gi"
-              cpu: "1000m"
+              # Chromium page-render bursts are CPU-heavy. A 1-core cap throttles
+              # scrapes hard — give the worker room to burst. Scale MAX_CONCURRENT
+              # (configmap) down on nodes with fewer cores.
+              memory: "3Gi"
+              cpu: "3000m"
           volumeMounts:
             - name: results
               mountPath: /data/results
