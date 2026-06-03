@@ -3087,14 +3087,25 @@
                 if (data.success) {
                     currentJobId = data.job_id;
                     localStorage.setItem('yp_current_job', currentJobId);
+                    jobIsActive = true;
+                    jobAlreadyCompleted = false;
                     document.getElementById('stop-btn').disabled = false;
                     document.getElementById('progress-panel').style.display = 'block';
                     document.getElementById('stat-total').textContent = data.total_searches;
+                    document.getElementById('stat-completed').textContent = '0';
+                    document.getElementById('stat-businesses').textContent = '0';
+                    document.getElementById('stat-rate').textContent = '-';
+                    document.getElementById('progress-bar').style.width = '0%';
                     document.getElementById('download-section').style.display = 'none';
                     document.getElementById('workers-header').textContent = concurrent;
 
                     // Show pending state
                     document.querySelector('.progress-header h2').textContent = 'Waiting for worker...';
+                    const indicator = document.querySelector('.running-indicator');
+                    if (indicator) {
+                        indicator.style.background = 'var(--primary)';
+                        indicator.style.animation = 'pulseIndicator 1.5s ease-in-out infinite';
+                    }
 
                     startTime = Date.now();
                     scrapeStartedAt = Date.now();
@@ -3127,11 +3138,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ job_id: currentJobId })
                 });
+                jobIsActive = false;
+                jobAlreadyCompleted = true;
                 document.getElementById('start-btn').disabled = false;
                 document.getElementById('stop-btn').disabled = true;
-                scrapeStartedAt = null;  // Reset grace period tracking
+                scrapeStartedAt = null;
+                localStorage.removeItem('yp_current_job');
 
-                // 🛑 DROP FROM HYPERSPACE
                 Starfield.dropFromHyperspace();
 
                 showNotification('info', 'Scraper stopped');
@@ -3226,7 +3239,14 @@
         }
 
         // Job completion handler
-        function onJobComplete() {
+        let jobIsActive = false;  // True only while we're tracking a live job
+        let jobAlreadyCompleted = false;  // Prevent double-firing onJobComplete
+
+        function onJobComplete(finalData) {
+            if (jobAlreadyCompleted) return;
+            jobAlreadyCompleted = true;
+            jobIsActive = false;
+
             document.getElementById('start-btn').disabled = false;
             document.getElementById('stop-btn').disabled = true;
             localStorage.removeItem('yp_current_job');
@@ -3234,27 +3254,43 @@
 
             Starfield.dropFromHyperspace();
 
-            document.querySelector('.progress-header h2').textContent = 'Scraping Complete';
+            // Show final stats before hiding
+            const status = (finalData && finalData.status) || 'complete';
+            const headerText = status === 'error' ? 'Job Failed' : 'Scraping Complete';
+            document.querySelector('.progress-header h2').textContent = headerText;
             const indicator = document.querySelector('.running-indicator');
             if (indicator) {
-                indicator.style.background = 'var(--success)';
+                indicator.style.background = status === 'error' ? 'var(--danger)' : 'var(--success)';
                 indicator.style.animation = 'none';
             }
 
+            // Show download buttons if files available
+            if (finalData && finalData.output_files && finalData.output_files.length > 0) {
+                document.getElementById('download-section').style.display = 'flex';
+                if (finalData.output_files.length > 1) {
+                    document.getElementById('download-all-btn').style.display = 'flex';
+                }
+            }
+
+            // Keep the panel visible for 8 seconds so user sees final results
             setTimeout(() => {
                 document.getElementById('progress-panel').style.display = 'none';
                 document.querySelector('.progress-header h2').textContent = 'Scraping in Progress';
-                if (indicator) indicator.style.animation = 'pulseIndicator 1.5s ease-in-out infinite';
-            }, 5000);
+                if (indicator) {
+                    indicator.style.background = 'var(--primary)';
+                    indicator.style.animation = 'pulseIndicator 1.5s ease-in-out infinite';
+                }
+            }, 8000);
 
             loadPreviousResults();
         }
 
-        // Update progress
+        // Update progress — only runs when jobIsActive
         async function updateProgress() {
+            if (!jobIsActive || !currentJobId) return;
+
             try {
-                const progressUrl = currentJobId ? '/api/progress?job_id=' + currentJobId : '/api/progress';
-                const response = await fetch(progressUrl);
+                const response = await fetch('/api/progress?job_id=' + currentJobId);
                 if (!response.ok) return;
                 const data = await response.json();
 
@@ -3263,10 +3299,6 @@
                     document.querySelector('.progress-header h2').textContent = 'Waiting for worker...';
                 } else if (data.status === 'running') {
                     document.querySelector('.progress-header h2').textContent = 'Scraping in Progress';
-                } else if (data.status === 'error') {
-                    document.querySelector('.progress-header h2').textContent = 'Job Failed';
-                    onJobComplete();
-                    return;
                 }
 
                 if (data.progress) {
@@ -3287,14 +3319,39 @@
                     document.getElementById('stat-completed').textContent = formatNumber(completed);
                     document.getElementById('stat-businesses').textContent = formatNumber(businesses);
 
+                    // Rate and ETA
                     if (startTime && completed > 0) {
-                        const elapsed = (Date.now() - startTime) / 1000 / 60;
+                        const elapsedMs = Date.now() - startTime;
+                        const elapsedMin = elapsedMs / 1000 / 60;
+                        const remaining = total - completed;
+
                         if (maxBusinesses > 0 && businesses > 0) {
-                            const bizRate = Math.round(businesses / elapsed);
+                            const bizRate = Math.round(businesses / elapsedMin);
                             document.getElementById('stat-rate').textContent = formatNumber(bizRate) + ' biz';
+
+                            // ETA based on business limit
+                            const bizRemaining = maxBusinesses - businesses;
+                            if (bizRate > 0 && bizRemaining > 0) {
+                                const etaMin = bizRemaining / bizRate;
+                                document.getElementById('stat-rate').textContent = formatNumber(bizRate) + ' biz | ETA ' + formatETA(etaMin);
+                            }
                         } else {
-                            const rate = Math.round(completed / elapsed);
-                            document.getElementById('stat-rate').textContent = formatNumber(rate);
+                            const rate = Math.round(completed / elapsedMin);
+                            document.getElementById('stat-rate').textContent = formatNumber(rate) + '/min';
+
+                            // ETA based on searches remaining
+                            if (rate > 0 && remaining > 0) {
+                                const etaMin = remaining / rate;
+                                document.getElementById('stat-rate').textContent = formatNumber(rate) + '/min | ETA ' + formatETA(etaMin);
+                            }
+                        }
+                    }
+
+                    // Show errors inline if any
+                    if (errors > 0) {
+                        const errEl = document.getElementById('stat-rate');
+                        if (errEl && errEl.textContent) {
+                            errEl.textContent += ' | ' + errors + ' err';
                         }
                     }
                 }
@@ -3310,12 +3367,20 @@
                 // Check if scraping has finished
                 const isWithinGracePeriod = scrapeStartedAt && (Date.now() - scrapeStartedAt < SCRAPE_GRACE_PERIOD);
 
-                if (!data.running && !isWithinGracePeriod && data.status && data.status !== 'pending') {
-                    onJobComplete();
+                if (!isWithinGracePeriod && !data.running && data.status && data.status !== 'pending') {
+                    onJobComplete(data);
                 }
             } catch (error) {
                 console.error('Error updating progress:', error);
             }
+        }
+
+        function formatETA(minutes) {
+            if (minutes < 1) return '<1m';
+            if (minutes < 60) return Math.ceil(minutes) + 'm';
+            const h = Math.floor(minutes / 60);
+            const m = Math.ceil(minutes % 60);
+            return h + 'h ' + m + 'm';
         }
 
         // Delete a specific result file
@@ -3393,6 +3458,8 @@
                 if (data.running && data.job_id) {
                     currentJobId = data.job_id;
                     localStorage.setItem('yp_current_job', currentJobId);
+                    jobIsActive = true;
+                    jobAlreadyCompleted = false;
                     document.getElementById('start-btn').disabled = true;
                     document.getElementById('stop-btn').disabled = false;
                     document.getElementById('progress-panel').style.display = 'block';
@@ -3404,6 +3471,7 @@
                 } else {
                     localStorage.removeItem('yp_current_job');
                     currentJobId = null;
+                    jobIsActive = false;
                 }
             } catch (e) {
                 console.error('Recovery check failed:', e);
