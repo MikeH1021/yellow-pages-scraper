@@ -243,32 +243,51 @@ def delete_user(username):
 @app.route('/settings')
 @login_required
 def settings():
-    if not current_user.is_admin:
-        flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('dashboard'))
-
-    effective_key = XAI_API_KEY or job_store.get_setting('xai_api_key', '')
+    # Grok key (admin-only to change, all can see status)
+    effective_xai = XAI_API_KEY or job_store.get_setting('xai_api_key', '')
     masked_key = ''
     key_source = ''
-    if effective_key:
-        masked_key = effective_key[:8] + '...' + effective_key[-4:] if len(effective_key) > 12 else '***'
+    if effective_xai:
+        masked_key = effective_xai[:8] + '...' + effective_xai[-4:] if len(effective_xai) > 12 else '***'
         key_source = 'environment variable' if XAI_API_KEY else 'saved setting'
 
-    return render_template('settings.html', api_key_masked=masked_key, has_api_key=bool(effective_key), key_source=key_source, model_name=XAI_MODEL)
+    # HTM key (per-user)
+    user_htm_key = job_store.get_setting(f'htm_api_key:{current_user.username}', '')
+    htm_masked = ''
+    htm_source = ''
+    if user_htm_key:
+        htm_masked = user_htm_key[:8] + '...' + user_htm_key[-4:] if len(user_htm_key) > 12 else '***'
+        htm_source = 'your personal key'
+    elif HTM_API_KEY:
+        htm_masked = HTM_API_KEY[:8] + '...' + HTM_API_KEY[-4:] if len(HTM_API_KEY) > 12 else '***'
+        htm_source = 'global default'
+
+    return render_template('settings.html',
+        api_key_masked=masked_key, has_api_key=bool(effective_xai), key_source=key_source, model_name=XAI_MODEL,
+        htm_key_masked=htm_masked, has_htm_key=bool(user_htm_key or HTM_API_KEY), htm_key_source=htm_source,
+    )
 
 
 @app.route('/settings/save', methods=['POST'])
 @login_required
 def save_settings():
-    if not current_user.is_admin:
-        return jsonify({'error': 'Access denied'}), 403
+    saved_something = False
 
+    # Grok key — admin only
     xai_key = request.form.get('xai_api_key', '').strip()
-
-    if xai_key:
+    if xai_key and current_user.is_admin:
         job_store.set_setting('xai_api_key', xai_key)
         flash('Grok API key saved successfully', 'success')
-    else:
+        saved_something = True
+
+    # HTM key — per user
+    htm_key = request.form.get('htm_api_key', '').strip()
+    if htm_key:
+        job_store.set_setting(f'htm_api_key:{current_user.username}', htm_key)
+        flash('HTM Portal API key saved successfully', 'success')
+        saved_something = True
+
+    if not saved_something:
         flash('No changes made', 'info')
 
     return redirect(url_for('settings'))
@@ -381,20 +400,30 @@ Rules:
 
 # --- HTM Portal Integration ---
 
+def _get_htm_key():
+    """Get HTM API key — per-user first, then global env var."""
+    if current_user.is_authenticated:
+        user_key = job_store.get_setting(f'htm_api_key:{current_user.username}')
+        if user_key:
+            return user_key
+    return HTM_API_KEY
+
+
 def _htm_request(path, params=None):
     """Make an authenticated request to the HTM Portal API."""
     import requests as http_requests
-    if not HTM_API_KEY:
-        return None, "HTM Portal API key not configured. Set HTM_API_KEY env var."
+    api_key = _get_htm_key()
+    if not api_key:
+        return None, "HTM Portal API key not set. Add it in Settings."
     try:
         resp = http_requests.get(
             f"{HTM_BASE_URL}{path}",
-            headers={'Authorization': f'Bearer {HTM_API_KEY}'},
+            headers={'Authorization': f'Bearer {api_key}'},
             params=params,
             timeout=30,
         )
         if resp.status_code == 401:
-            return None, "HTM Portal API key is invalid"
+            return None, "HTM Portal API key is invalid. Check your key in Settings."
         if not resp.ok:
             return None, f"HTM Portal error: HTTP {resp.status_code}"
         return resp.json(), None
