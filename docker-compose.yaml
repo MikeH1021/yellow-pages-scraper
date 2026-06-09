@@ -20,9 +20,9 @@ services:
       REDIS_URL: redis://redis:6379/0
       RESULTS_DIR: /data/results
       PROXY_FILE: /data/proxies/proxies.txt
-      SECRET_KEY: ${SECRET_KEY:-REDACTED_ROTATED_SECRET}
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env (not committed)}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-mike}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-REDACTED_ROTATED_SECRET}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env (not committed)}
       XAI_API_KEY: ${XAI_API_KEY:-}
       XAI_MODEL: ${XAI_MODEL:-grok-4.3}
       HTM_API_KEY: ${HTM_API_KEY:-}
