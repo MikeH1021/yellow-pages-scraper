@@ -30,7 +30,7 @@ CONFIG_DIR = os.path.expanduser("~/.yp-scraper")
 SESSION_FILE = os.path.join(CONFIG_DIR, "session")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config")
 
-DEFAULT_BASE_URL = "https://scrape-yp.mikehernandez.co"
+DEFAULT_BASE_URL = "https://yp.leadgenjay.com"
 
 
 # ---------------------------------------------------------------------------
@@ -421,7 +421,7 @@ def build_parser():
         prog="yp-cli.py",
         description="CLI for the Yellow Pages Scraper API",
     )
-    parser.add_argument("--url", help="Base URL of the scraper API (default: https://scrape-yp.mikehernandez.co)")
+    parser.add_argument("--url", help="Base URL of the scraper API (default: https://yp.leadgenjay.com)")
     parser.add_argument("--json", action="store_true", help="Output in JSON format (machine-readable)")
 
     sub = parser.add_subparsers(dest="command", help="Available commands")

@@ -1,7 +1,7 @@
 # Skill: Yellow Pages Scraper CLI (yp-cli.py)
 
 ## What It Does
-`yp-cli.py` is a command-line interface for the Yellow Pages Scraper API at `https://scrape-yp.mikehernandez.co`. It handles authentication, job submission, progress monitoring, result downloading, and AI-powered keyword suggestions.
+`yp-cli.py` is a command-line interface for the Yellow Pages Scraper API at `https://yp.leadgenjay.com`. It handles authentication, job submission, progress monitoring, result downloading, and AI-powered keyword suggestions.
 
 ## Prerequisites
 - Python 3 with `requests` installed (`pip install requests`)

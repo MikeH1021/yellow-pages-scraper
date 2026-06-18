@@ -439,7 +439,7 @@ The `SKILL.md` file teaches the agent every available command, flag, and workflo
 
 **Ready to generate hundreds of thousands of B2B leads? Let's go!** 🚀
 
-**Web UI:** https://scrape-yp.mikehernandez.co
+**Web UI:** https://yp.leadgenjay.com
 
 ```bash
 # Or use the CLI:
